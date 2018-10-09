@@ -11,33 +11,31 @@
 #
 # By default this script does nothing.
 
+# Wait a few seconds for network connections to stabilize
+echo "rc.local: Waiting a few seconds for network connections to stabilize..."
+sleep 5
+
 # Print information about network interfaces
 echo "--------------------------------------------------------------------------------"
 echo "Information about network interfaces:"
 ifconfig
-echo "--------------------------------------------------------------------------------"
-echo "MAC addresses:"
-ifconfig | grep -E '(flags|ether)'
-echo "--------------------------------------------------------------------------------"
 
 # Print the IP address
 _IP=$(hostname -I) || true
 if [ "$_IP" ]; then
   echo "--------------------------------------------------------------------------------"
   printf "My IP address is %s\n" "$_IP"
-  echo "--------------------------------------------------------------------------------"
 fi
 
 # Print information about network connections
 echo "--------------------------------------------------------------------------------"
 echo "Information about network connections:"
 iwconfig
-echo "--------------------------------------------------------------------------------"
 
 # Start light control script
 echo "--------------------------------------------------------------------------------"
 echo "Starting light control script..."
 ./home/pi/hand-hygiene/intervention/startup.sh
-echo "--------------------------------------------------------------------------------"
 
+echo "--------------------------------------------------------------------------------"
 exit 0

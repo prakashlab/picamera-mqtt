@@ -34,3 +34,22 @@ sudo python3 sticktest.py -c
 ```
 Note that the `-c` command-line flag instructs the script to turn off all LEDs when
 the script quits.
+
+## Deployment Setup
+To automatically run the prototype when the Raspberry Pi starts up, add a call to the
+`startup.sh` script to `/etc/rc.local`, for example by adding the following lines before
+the last `exit 0` line of `/etc/rc.local`:
+```
+./home/pi/hand-hygiene/intervention/startup.sh
+```
+You can also copy the `rc.local` script, which also has a few lines for printing
+additional information upon startup, as follows:
+```
+cd ~/hand-hygiene/intervention
+sudo cp rc.local /etc/rc.local
+```
+You can kill the script initiated from startup by running the `cancel_startup.sh` script
+with root privileges, as follows:
+```
+./hand-hygiene/intervention/cancel_startup.sh
+```

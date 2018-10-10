@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Adapted from the Arduino NeoPixel library strandtest example."""
 
-import time
+import asyncio
 
 import rpi_ws281x as ws
 
@@ -18,9 +18,9 @@ def wheel(pos):
         return ws.Color(0, pos * 3, 255 - pos * 3)
 
 
-def sleep_ms(duration):
+async def sleep_ms(duration):
     """Sleep for the specified duration in milliseconds."""
-    time.sleep(duration / 1000.0)
+    await asyncio.sleep(duration / 1000.0)
 
 
 class Illumination:
@@ -54,24 +54,24 @@ class Illumination:
         self.strip.begin()
 
     # Define functions which animate LEDs in various ways.
-    def color_wipe(self, color, wait_ms=50):
+    async def color_wipe(self, color, wait_ms=50):
         """Wipe color across display a pixel at a time."""
         for i in range(self.strip.numPixels()):
             self.strip.setPixelColor(i, color)
             self.strip.show()
-            sleep_ms(wait_ms)
+            await sleep_ms(wait_ms)
 
-    def theater_chase(self, color, wait_ms=50):
+    async def theater_chase(self, color, wait_ms=50):
         """Movie theater light style chaser animation."""
         for q in range(3):
             for i in range(0, self.strip.numPixels(), 3):
                 self.strip.setPixelColor(i+q, color)
             self.strip.show()
-            sleep_ms(wait_ms)
+            await sleep_ms(wait_ms)
             for i in range(0, self.strip.numPixels(), 3):
                 self.strip.setPixelColor(i+q, 0)
 
-    def rainbow(self, wait_ms=20):
+    async def rainbow(self, wait_ms=20):
         """Draw rainbow that fades across all pixels at once."""
         for j in range(256):
             for i in range(self.strip.numPixels()):
@@ -79,9 +79,9 @@ class Illumination:
                     i, wheel((i + j) & 255)
                 )
             self.strip.show()
-            sleep_ms(wait_ms)
+            await sleep_ms(wait_ms)
 
-    def rainbow_cycle(self, wait_ms=2):
+    async def rainbow_cycle(self, wait_ms=2):
         """Draw rainbow that uniformly distributes itself across all pixels."""
         for j in range(256):
             for i in range(self.strip.numPixels()):
@@ -89,9 +89,9 @@ class Illumination:
                     (int(i * 256 / self.strip.numPixels()) + j) & 255
                 ))
             self.strip.show()
-            sleep_ms(wait_ms)
+            await sleep_ms(wait_ms)
 
-    def theater_chase_rainbow(self, wait_ms=20):
+    async def theater_chase_rainbow(self, wait_ms=20):
         """Rainbow movie theater light style chaser animation."""
         for j in range(256):
             for q in range(3):
@@ -100,10 +100,10 @@ class Illumination:
                         i + q, wheel((i + j) % 255)
                     )
                 self.strip.show()
-                sleep_ms(wait_ms)
+                await sleep_ms(wait_ms)
                 for i in range(0, self.strip.numPixels(), 3):
                     self.strip.setPixelColor(i + q, 0)
 
-    def clear(self):
+    async def clear(self):
         """Turn off all LEDs."""
-        self.color_wipe(ws.Color(0, 0, 0), wait_ms=10)
+        await self.color_wipe(ws.Color(0, 0, 0), wait_ms=10)

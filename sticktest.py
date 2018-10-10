@@ -19,8 +19,6 @@ def signal_handler(signum, frame):
 
 
 async def main():
-    signal.signal(signal.SIGINT, signal_handler)
-
     lights = il.Illumination()
 
     print('Press Ctrl-C to quit.')
@@ -53,6 +51,8 @@ async def main():
 
 # Main program logic follows:
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, signal_handler)
+
     loop = asyncio.get_event_loop()
     task = loop.create_task(main())
     try:

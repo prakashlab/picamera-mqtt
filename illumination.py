@@ -106,4 +106,4 @@ class Illumination:
 
     async def clear(self):
         """Turn off all LEDs."""
-        await self.color_wipe(ws.Color(0, 0, 0), wait_ms=10)
+        await self.color_wipe(ws.Color(0, 0, 0), wait_ms=0)

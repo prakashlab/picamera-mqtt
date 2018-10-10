@@ -95,6 +95,10 @@ class AsyncioClient(object):
         self.client.connect(self.hostname, self.port)
         self.client.socket().setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2048)
 
+    async def on_quit(self):
+        """When the client quits, handle it."""
+        pass
+
     async def run(self):
         """Run the client."""
         self.connect()
@@ -107,6 +111,7 @@ class AsyncioClient(object):
 
         self.client.disconnect()
         logger.info('Disconnected: {}'.format(await self.disconnected))
+        await self.on_quit()
 
     async def run_iteration(self):
         """Run one iteration of the run loop."""

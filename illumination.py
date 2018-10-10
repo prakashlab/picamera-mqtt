@@ -54,6 +54,12 @@ class Illumination:
         self.strip.begin()
 
     # Define functions which animate LEDs in various ways.
+    def color(self, color):
+        """Set color for entire display."""
+        for i in range(self.strip.numPixels()):
+            self.strip.setPixelColor(i, color)
+        self.strip.show()
+
     async def breathe(self, intensity, wait_ms=2):
         """Gently fade in and out."""
         for j in range(intensity):

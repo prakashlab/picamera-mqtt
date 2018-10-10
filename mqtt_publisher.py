@@ -32,15 +32,19 @@ class Publisher(AsyncioClient):
         super().__init__(*args, **kwargs)
         self.message = message
 
+    def on_topic(self, client, userdata, msg):
+        """Handle any messages from the broker on the preset topic."""
+        logger.info('Received message on subscribed topic: {}'.format(msg.payload))
+
+    def add_topic_handlers(self):
+        """Add any topic handler message callbacks as needed."""
+        self.client.message_callback_add(topic, self.on_topic)
+
     async def run_iteration(self):
         """Run one iteration of the run loop."""
         await asyncio.sleep(5)
         logger.info('Publishing message: {}'.format(self.message))
-        self.got_message = self.loop.create_future()
         self.client.publish(topic, message, qos=1)
-        msg = await self.got_message
-        logger.debug('Got response with {} bytes'.format(len(msg)))
-        self.got_message = None
 
 
 if __name__ == '__main__':

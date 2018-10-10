@@ -70,24 +70,25 @@ class AsyncioClient(object):
             self.topics = [topic for topic in topics]
 
         self.disconnected = self.loop.create_future()
-        self.got_message = None
 
     def on_connect(self, client, userdata, flags, rc):
         """When the client connects, subscribe to the topic."""
         logger.info('Subscribing to topics...')
         for topic in self.topics:
             client.subscribe(topic)
+        self.add_topic_handlers()
 
     def on_message(self, client, userdata, msg):
         """When the client receives a message, handle it."""
-        if not self.got_message:
-            logger.error('Got unexpected message: {}'.format(msg.decode()))
-        else:
-            self.got_message.set_result(msg.payload)
+        logger.info('Got message on topic {}: {}'.format(msg.topic, msg.payload))
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
         self.disconnected.set_result(rc)
+
+    def add_topic_handlers(self):
+        """Add any topic handler message callbacks as needed."""
+        pass
 
     def connect(self):
         """Start the client connection."""
@@ -109,4 +110,4 @@ class AsyncioClient(object):
 
     async def run_iteration(self):
         """Run one iteration of the run loop."""
-        pass
+        await asyncio.sleep(100)

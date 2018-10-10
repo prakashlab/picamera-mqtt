@@ -17,10 +17,15 @@ def wheel(pos):
         pos -= 170
         return ws.Color(0, pos * 3, 255 - pos * 3)
 
+
 def sleep_ms(duration):
+    """Sleep for the specified duration in milliseconds."""
     time.sleep(duration / 1000.0)
 
+
 class Illumination:
+    """Handles illumination animation for a NeoPixel device."""
+
     def __init__(
         self, num_leds=8, led_pin=18, led_brightness=255,
         led_freq=800000, led_dma=10, led_channel=0,
@@ -100,4 +105,5 @@ class Illumination:
                     self.strip.setPixelColor(i + q, 0)
 
     def clear(self):
-        self.color_wipe(ws.Color(0,0,0), wait_ms=10)
+        """Turn off all LEDs."""
+        self.color_wipe(ws.Color(0, 0, 0), wait_ms=10)

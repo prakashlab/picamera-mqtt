@@ -95,13 +95,35 @@ class AsyncioClient(object):
         self.client.connect(self.hostname, self.port)
         self.client.socket().setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2048)
 
-    async def on_quit(self):
-        """When the client quits, handle it."""
+    def on_run(self):
+        """When the client starts the run loop, handle it."""
         pass
+
+    def on_quit(self):
+        """When the client quits the run loop, handle it."""
+        pass
+
+    async def loop_until_connect(self):
+        """Repeatedly attempt to connect until successful."""
+        while True:
+            try:
+                self.connect()
+                break
+            except socket.gaierror:
+                logger.error(
+                    'DNS lookup of hostname {} failed, trying again...'
+                    .format(self.hostname)
+                )
+                await asyncio.sleep(1)
 
     async def run(self):
         """Run the client."""
-        self.connect()
+        self.on_run()
+        try:
+            await self.loop_until_connect()
+        except asyncio.CancelledError:
+            self.on_quit()
+            return
 
         while True:
             try:
@@ -111,7 +133,7 @@ class AsyncioClient(object):
 
         self.client.disconnect()
         logger.info('Disconnected: {}'.format(await self.disconnected))
-        await self.on_quit()
+        self.on_quit()
 
     async def run_iteration(self):
         """Run one iteration of the run loop."""

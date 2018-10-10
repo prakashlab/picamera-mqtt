@@ -43,14 +43,20 @@ class Illuminator(AsyncioClient):
         """Initialize client state."""
         super().__init__(*args, **kwargs)
         self.lights = il.Illumination()
-        self.modes = ['clear', 'wipe', 'theater', 'rainbow']
+        self.modes = ['clear', 'breathe', 'wipe', 'theater', 'rainbow']
         self.mode_actions = {
             'clear': self.clear,
+            'breathe': self.breathe,
             'wipe': self.wipe,
             'theater': self.theater,
             'rainbow': self.rainbow
         }
         self.illumination_task = None
+
+    def on_connect(self, client, userdata, flags, rc):
+        """When the client connects, handle it."""
+        super().on_connect(client, userdata, flags, rc)
+        self.set_illumination_mode('clear')
 
     def on_topic(self, client, userdata, msg):
         """Handle any messages from the broker on the preset topic."""
@@ -61,33 +67,60 @@ class Illuminator(AsyncioClient):
             logger.error('Unknown mode code: {}'.format(mode_code))
             mode = 'clear'
         logger.info('Setting illumination mode to: {}'.format(mode))
-        if self.illumination_task is not None:
-            self.illumination_task.cancel()
-        self.illumination_task = self.loop.create_task(self.mode_actions[mode]())
+        self.set_illumination_mode(mode)
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
         self.client.message_callback_add(topic, self.on_topic)
 
+    async def clear(self):
+        try:
+            self.lights.clear()
+        except KeyboardInterrupt:
+            self.lights.clear()
+
+    async def breathe(self):
+        try:
+            while True:
+                await self.lights.breathe(255)
+        except KeyboardInterrupt:
+            pass
+
     async def wipe(self):
-        while True:
-            await self.lights.color_wipe(ws.Color(0, 0, 255), wait_ms=20)
-            await self.lights.color_wipe(ws.Color(0, 0, 0), wait_ms=20)
+        try:
+            while True:
+                await self.lights.color_wipe(ws.Color(0, 0, 255), wait_ms=40)
+                await self.lights.color_wipe(ws.Color(0, 0, 0), wait_ms=40)
+        except KeyboardInterrupt:
+            pass
 
     async def theater(self):
-        while True:
-            await self.lights.theater_chase(ws.Color(0, 0, 255), wait_ms=200)
+        try:
+            while True:
+                await self.lights.theater_chase(ws.Color(0, 0, 255), wait_ms=200)
+        except KeyboardInterrupt:
+            pass
 
     async def rainbow(self):
-        while True:
-            await self.lights.rainbow_cycle(wait_ms=2)
+        try:
+            while True:
+                await self.lights.rainbow_cycle(wait_ms=2)
+        except KeyboardInterrupt:
+            pass
 
-    async def clear(self):
-        await self.lights.clear()
+    def set_illumination_mode(self, mode):
+        if self.illumination_task is not None:
+            self.illumination_task.cancel()
+        self.illumination_task = self.loop.create_task(self.mode_actions[mode]())
 
-    async def on_quit(self):
-        """When the client quits, handle it."""
-        await self.clear()
+    def on_run(self):
+        """When the client start the run loop, handle it."""
+        self.set_illumination_mode('breathe')
+
+    def on_quit(self):
+        """When the client quits the run loop, handle it."""
+        if self.illumination_task is not None:
+            self.illumination_task.cancel()
 
 
 if __name__ == '__main__':
@@ -106,8 +139,9 @@ if __name__ == '__main__':
         pending = asyncio.Task.all_tasks()
         for task in pending:
             task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                loop.run_until_complete(task)
+        with contextlib.suppress(asyncio.CancelledError):
+            loop.run_until_complete(asyncio.gather(*pending))
     finally:
         loop.close()
+        mqttc.lights.clear()
     logger.info('Finished!')

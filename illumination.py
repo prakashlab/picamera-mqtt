@@ -54,6 +54,19 @@ class Illumination:
         self.strip.begin()
 
     # Define functions which animate LEDs in various ways.
+    async def breathe(self, intensity, wait_ms=2):
+        """Gently fade in and out."""
+        for j in range(intensity):
+            for i in range(self.strip.numPixels()):
+                self.strip.setPixelColor(i, ws.Color(j, j, j))
+            self.strip.show()
+            await sleep_ms(wait_ms)
+        for j in range(intensity):
+            for i in range(self.strip.numPixels()):
+                self.strip.setPixelColor(i, ws.Color(intensity - j, intensity - j, intensity - j))
+            self.strip.show()
+            await sleep_ms(wait_ms)
+
     async def color_wipe(self, color, wait_ms=50):
         """Wipe color across display a pixel at a time."""
         for i in range(self.strip.numPixels()):
@@ -104,6 +117,9 @@ class Illumination:
                 for i in range(0, self.strip.numPixels(), 3):
                     self.strip.setPixelColor(i + q, 0)
 
-    async def clear(self):
+    def clear(self):
         """Turn off all LEDs."""
-        await self.color_wipe(ws.Color(0, 0, 0), wait_ms=0)
+        color = ws.Color(0, 0, 0)
+        for i in range(self.strip.numPixels()):
+            self.strip.setPixelColor(i, color)
+        self.strip.show()

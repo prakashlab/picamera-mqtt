@@ -25,6 +25,9 @@ async def main():
 
     try:
         while True:
+            print('Breathe animation.')
+            for i in range(5):
+                await lights.breathe(255)
             print('Color wipe animations.')
             for i in range(5):
                 await lights.color_wipe(ws.Color(255, 0, 0))  # Red wipe
@@ -46,7 +49,7 @@ async def main():
             print('  Rainbow theater chase.')
             await lights.theater_chase_rainbow()
     except asyncio.CancelledError:
-        await lights.clear()
+        lights.clear()
 
 
 # Main program logic follows:

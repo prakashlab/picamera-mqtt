@@ -11,8 +11,10 @@
 #
 # By default this script does nothing.
 
+
 # Wait a few seconds for network connections to stabilize
-echo "rc.local: Waiting a few seconds for network connections to stabilize..."
+./home/pi/hand-hygiene/intervention/startup_breathe.sh
+echo "Waiting a few seconds for network connections to stabilize..."
 sleep 5
 
 # Print information about network interfaces
@@ -27,15 +29,15 @@ if [ "$_IP" ]; then
   printf "My IP address is %s\n" "$_IP"
 fi
 
-# Print information about network connections
-echo "--------------------------------------------------------------------------------"
-echo "Information about network connections:"
-iwconfig
+# Print information about wireless network connections
+#echo "--------------------------------------------------------------------------------"
+#echo "Information about wireless network connections:"
+#iwconfig
 
 # Start light control script
 echo "--------------------------------------------------------------------------------"
 echo "Starting light control script..."
-./home/pi/hand-hygiene/intervention/startup.sh
+./home/pi/hand-hygiene/intervention/startup.sh &
 
 echo "--------------------------------------------------------------------------------"
 exit 0

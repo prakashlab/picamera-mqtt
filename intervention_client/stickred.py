@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Make the NeoPixel strip gently fade between white and dark."""
 
-import illumination as il
+from intervention_client import illumination as il
 
 import rpi_ws281x as ws
 

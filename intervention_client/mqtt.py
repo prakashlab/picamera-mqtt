@@ -73,6 +73,9 @@ class AsyncioClient(object):
 
     def on_connect(self, client, userdata, flags, rc):
         """When the client connects, subscribe to the topic."""
+        if rc != 0:
+            logger.error('Bad connection, returned code: {}'.format(rc))
+            return
         logger.info('Subscribing to topics...')
         for topic in self.topics:
             client.subscribe(topic)
@@ -84,6 +87,7 @@ class AsyncioClient(object):
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
+        logger.info('Disconnected, returned code: {}'.format(rc))
         self.disconnected.set_result(rc)
 
     def add_topic_handlers(self):
@@ -115,6 +119,7 @@ class AsyncioClient(object):
                     .format(self.hostname)
                 )
                 await asyncio.sleep(1)
+        logger.info('Connected to {}:{}.'.format(self.hostname, self.port))
 
     async def run(self):
         """Run the client."""
@@ -127,7 +132,9 @@ class AsyncioClient(object):
 
         while True:
             try:
-                await self.run_iteration()
+                await self.disconnected
+                logger.info('Reconnecting...')
+                await self.loop_until_connect()
             except asyncio.CancelledError:
                 break
 

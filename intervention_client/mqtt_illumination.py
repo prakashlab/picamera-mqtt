@@ -4,11 +4,11 @@
 import asyncio
 import contextlib
 import logging
+import logging.config
 import signal
 
-import illumination as il
-
-from mqtt import AsyncioClient
+from intervention_client import illumination as il
+from intervention_client.mqtt import AsyncioClient
 
 import rpi_ws281x as ws
 
@@ -20,12 +20,27 @@ password = 'limdi7J_A3Tc'
 topic = 'testing-illumination'
 
 # Set up logging
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'f': {
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+        }
+    },
+    'handlers': {
+        'h': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'f',
+            'level': logging.INFO
+        }
+    },
+    'root': {
+        'handlers': ['h'],
+        'level': logging.INFO
+    }
+})
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 
 def signal_handler(signum, frame):
@@ -57,6 +72,11 @@ class Illuminator(AsyncioClient):
         """When the client connects, handle it."""
         super().on_connect(client, userdata, flags, rc)
         self.set_illumination_mode('clear')
+
+    def on_disconnect(self, client, userdata, rc):
+        """When the client disconnects, handle it."""
+        super().on_disconnect(client, userdata, rc)
+        self.set_illumination_mode('breathe')
 
     def on_topic(self, client, userdata, msg):
         """Handle any messages from the broker on the preset topic."""

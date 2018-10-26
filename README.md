@@ -30,7 +30,7 @@ Then confirm that everything works correctly by running the `sticktest.py` scrip
 root privileges, as follows:
 ```
 cd ~/hand-hygiene/intervention
-sudo python3 sticktest.py -c
+sudo python3 intervention_client/sticktest.py -c
 ```
 Note that the `-c` command-line flag instructs the script to turn off all LEDs when
 the script quits.

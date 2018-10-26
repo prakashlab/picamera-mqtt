@@ -5,7 +5,7 @@ import asyncio
 import contextlib
 import logging
 
-from mqtt import AsyncioClient
+from intervention_client.mqtt import AsyncioClient
 
 # Program parameters
 hostname = 'm15.cloudmqtt.com'

@@ -5,7 +5,7 @@ import asyncio
 import contextlib
 import signal
 
-import illumination as il
+from intervention_client import illumination as il
 
 import rpi_ws281x as ws
 

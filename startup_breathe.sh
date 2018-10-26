@@ -5,5 +5,5 @@ PIDFILENAME="startup.pid"
 cd "${DIRNAME}"
 /usr/bin/python3 -m intervention_client.stickbreathe > /dev/null &
 PID=$!
-echo $PID > "${DIRNAME}/${PIDFILENAME}"
+echo $PID > "${PIDFILENAME}"
 

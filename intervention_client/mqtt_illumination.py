@@ -70,13 +70,14 @@ class Illuminator(AsyncioClient):
 
     def on_connect(self, client, userdata, flags, rc):
         """When the client connects, handle it."""
-        super().on_connect(client, userdata, flags, rc)
         self.set_illumination_mode('clear')
+        super().on_connect(client, userdata, flags, rc)
+        self.client.publish('connect', 'illumination client', qos=2)
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
-        super().on_disconnect(client, userdata, rc)
         self.set_illumination_mode('breathe')
+        super().on_disconnect(client, userdata, rc)
 
     def on_topic(self, client, userdata, msg):
         """Handle any messages from the broker on the preset topic."""
@@ -149,7 +150,8 @@ if __name__ == '__main__':
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()
     mqttc = Illuminator(
-        loop, hostname, port, username=username, password=password, topics=[topic]
+        loop, hostname, port, username=username, password=password,
+        topics={topic: 2}
     )
     task = loop.create_task(mqttc.run())
     try:

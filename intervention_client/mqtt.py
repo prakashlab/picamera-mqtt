@@ -48,14 +48,21 @@ class AsyncioClient(object):
     """Async MQTT client."""
 
     def __init__(
-        self, loop, hostname, port, username=None, password=None, topics=[]
+        self, loop, hostname, port, username=None, password=None,
+        client_id='', topics={},
+        clean_session=True, ping_interval=2, ping_timeout=1
     ):
         """Initialize client state."""
         self.loop = loop
-        self.client = mqtt.Client()
+        self.client_id = client_id
+        self.clean_session = clean_session
+        self.client = mqtt.Client(
+            client_id=client_id, clean_session=clean_session
+        )
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
+        self.client.on_publish = self.on_publish
         self.client.enable_logger(logger=logger)
         self.helper = AsyncioHelper(self.loop, self.client)
 
@@ -67,8 +74,11 @@ class AsyncioClient(object):
         self.port = port
 
         if topics:
-            self.topics = [topic for topic in topics]
+            self.topics = {topic: qos for (topic, qos) in topics.items()}
 
+        self.ping_interval = ping_interval
+        self.ping_timeout = ping_timeout
+        self.ping_mid = None
         self.disconnected = self.loop.create_future()
 
     def on_connect(self, client, userdata, flags, rc):
@@ -77,7 +87,7 @@ class AsyncioClient(object):
             logger.error('Bad connection, returned code: {}'.format(rc))
             return
         logger.info('Subscribing to topics...')
-        for topic in self.topics:
+        for (topic, qos) in self.topics.items():
             client.subscribe(topic)
         self.add_topic_handlers()
 
@@ -87,16 +97,25 @@ class AsyncioClient(object):
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
-        logger.info('Disconnected, returned code: {}'.format(rc))
+        logger.error('Disconnected, returned code: {}'.format(rc))
         self.disconnected.set_result(rc)
+
+    def on_publish(self, client, userdata, mid):
+        """When the client publishes a message, handle it."""
+        if mid == self.ping_mid:
+            logger.debug('Ping {} published to broker'.format(mid))
+            self.ping_mid = None
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
         pass
 
-    def connect(self):
+    def connect(self, reconnect=False):
         """Start the client connection."""
-        self.client.connect(self.hostname, self.port)
+        if reconnect:
+            self.client.reconnect()
+        else:
+            self.client.connect(self.hostname, self.port)
         self.client.socket().setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2048)
 
     def on_run(self):
@@ -107,18 +126,30 @@ class AsyncioClient(object):
         """When the client quits the run loop, handle it."""
         pass
 
-    async def loop_until_connect(self):
+    async def loop_until_connect(self, reconnect=False):
         """Repeatedly attempt to connect until successful."""
         while True:
             try:
-                self.connect()
+                self.connect(reconnect=reconnect)
+                self.disconnected = self.loop.create_future()
                 break
             except socket.gaierror:
                 logger.error(
                     'DNS lookup of hostname {} failed, trying again...'
                     .format(self.hostname)
                 )
-                await asyncio.sleep(1)
+                logger.info('Restarting dhcpcd systemctl service...')
+                process = await asyncio.create_subprocess_exec(
+                    'systemctl', 'daemon-reload',
+                    stdout=asyncio.subprocess.PIPE
+                )
+                await process.communicate()
+                process = await asyncio.create_subprocess_exec(
+                    'systemctl', 'restart', 'dhcpcd',
+                    stdout=asyncio.subprocess.PIPE
+                )
+                await process.communicate()
+
         logger.info('Connected to {}:{}.'.format(self.hostname, self.port))
 
     async def run(self):
@@ -132,9 +163,7 @@ class AsyncioClient(object):
 
         while True:
             try:
-                await self.disconnected
-                logger.info('Reconnecting...')
-                await self.loop_until_connect()
+                await self.run_iteration()
             except asyncio.CancelledError:
                 break
 
@@ -144,4 +173,13 @@ class AsyncioClient(object):
 
     async def run_iteration(self):
         """Run one iteration of the run loop."""
-        await asyncio.sleep(100)
+        if self.disconnected.done() and self.disconnected.result():
+            logger.info('Reconnecting...')
+            await self.loop_until_connect(reconnect=True)
+        await asyncio.sleep(self.ping_interval - self.ping_timeout)
+        message = self.client.publish('ping', 'illumination client', qos=1)
+        self.ping_mid = message.mid
+        await asyncio.sleep(self.ping_timeout)
+        if self.ping_mid is not None:
+            self.on_disconnect(self.client, None, 1)
+            self.ping_mid = None

@@ -20,7 +20,7 @@ port = 16076
 username = 'lpkbaxec'
 password = 'limdi7J_A3Tc'
 illumination_topic = 'illumination'
-control_topic = 'control'
+deploy_topic = 'deploy'
 message_encoding = 'utf-8'
 
 # Set up logging
@@ -83,8 +83,8 @@ class Illuminator(AsyncioClient):
         self.set_illumination({'mode': 'breathe'})
         super().on_disconnect(client, userdata, rc)
 
-    def on_control_topic(self, client, userdata, msg):
-        """Handle any program control messages."""
+    def on_deploy_topic(self, client, userdata, msg):
+        """Handle any device deployment messages."""
         command = msg.payload.decode(message_encoding)
         if command == 'restart':
             self.loop.create_task(self.restart())
@@ -127,7 +127,7 @@ class Illuminator(AsyncioClient):
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
-        self.client.message_callback_add(control_topic, self.on_control_topic)
+        self.client.message_callback_add(deploy_topic, self.on_deploy_topic)
         self.client.message_callback_add(illumination_topic, self.on_illumination_topic)
 
     async def clear(self, params):
@@ -231,7 +231,7 @@ if __name__ == '__main__':
         loop, hostname, port, username=username, password=password,
         topics={
             illumination_topic: 2,
-            control_topic: 2
+            deploy_topic: 2
         }
     )
     task = loop.create_task(mqttc.run())

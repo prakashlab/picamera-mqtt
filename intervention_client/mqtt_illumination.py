@@ -14,6 +14,7 @@ from intervention_client.mqtt import AsyncioClient
 import rpi_ws281x as ws
 
 # Program parameters
+pi_username = 'pac'
 hostname = 'm15.cloudmqtt.com'
 port = 16076
 username = 'lpkbaxec'
@@ -86,11 +87,26 @@ class Illuminator(AsyncioClient):
         """Handle any program control messages."""
         command = msg.payload.decode(message_encoding)
         if command == 'restart':
-            logger.info('Restarting...')
-            process = self.loop.create_task(asyncio.create_subprocess_exec(
-                'shutdown', '-r', 'now',
+            self.loop.create_task(self.restart())
+        elif command == 'git pull':
+            self.loop.create_task(self.git_pull())
+
+    async def restart(self):
+        logger.info('Restarting...')
+        process = await asyncio.create_subprocess_exec(
+            'shutdown', '-r', 'now',
+            stdout=asyncio.subprocess.PIPE
+        )
+        await process.communicate()
+
+    async def git_pull(self):
+        logger.info('Updating local repo...')
+        process = await asyncio.create_subprocess_exec(
+                'sudo', '-u', pi_username, 'git', 'pull',
                 stdout=asyncio.subprocess.PIPE
-            ))
+            )
+        await process.communicate()
+        await self.restart()
 
     def on_illumination_topic(self, client, userdata, msg):
         """Handle any illumination messages."""

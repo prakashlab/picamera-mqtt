@@ -36,11 +36,13 @@ Note that the `-c` command-line flag instructs the script to turn off all LEDs w
 the script quits.
 
 ## Deployment Setup
+These instructions assume that the username of the default user on the Raspberry Pi has
+been changed from `pi` to `pac`.
 To automatically run the prototype when the Raspberry Pi starts up, add a call to the
 `startup.sh` script to `/etc/rc.local`, for example by adding the following lines before
 the last `exit 0` line of `/etc/rc.local`:
 ```
-./home/pi/hand-hygiene/intervention/startup.sh
+./home/pac/hand-hygiene/intervention/startup.sh
 ```
 You can also copy the `rc.local` script, which also has a few lines for printing
 additional information upon startup, as follows:

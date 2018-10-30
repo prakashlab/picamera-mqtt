@@ -22,7 +22,7 @@ fi
 # Start light control script
 echo "--------------------------------------------------------------------------------"
 echo "Starting light control script..."
-./home/pi/hand-hygiene/intervention/startup.sh &
+./home/pac/hand-hygiene/intervention/startup.sh &
 
 echo "--------------------------------------------------------------------------------"
 exit 0

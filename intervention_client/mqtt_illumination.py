@@ -17,7 +17,8 @@ hostname = 'm15.cloudmqtt.com'
 port = 16076
 username = 'lpkbaxec'
 password = 'limdi7J_A3Tc'
-topic = 'testing-illumination'
+illumination_topic = 'testing-illumination'
+control_topic = 'testing-control'
 
 # Set up logging
 logging.config.dictConfig({
@@ -79,8 +80,18 @@ class Illuminator(AsyncioClient):
         self.set_illumination_mode('breathe')
         super().on_disconnect(client, userdata, rc)
 
-    def on_topic(self, client, userdata, msg):
-        """Handle any messages from the broker on the preset topic."""
+    def on_control_topic(self, client, userdata, msg):
+        """Handle any program control messages."""
+        command = msg.payload.decode('utf-8')
+        if command == 'restart':
+            logger.info('Restarting...')
+            process = self.loop.create_task(asyncio.create_subprocess_exec(
+                'shutdown', '-r', 'now',
+                stdout=asyncio.subprocess.PIPE
+            ))
+
+    def on_illumination_topic(self, client, userdata, msg):
+        """Handle any illumination messages."""
         mode_code = int(msg.payload)
         try:
             mode = self.modes[mode_code]
@@ -92,7 +103,8 @@ class Illuminator(AsyncioClient):
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
-        self.client.message_callback_add(topic, self.on_topic)
+        self.client.message_callback_add(control_topic, self.on_control_topic)
+        self.client.message_callback_add(illumination_topic, self.on_illumination_topic)
 
     async def clear(self):
         try:
@@ -151,7 +163,10 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     mqttc = Illuminator(
         loop, hostname, port, username=username, password=password,
-        topics={topic: 2}
+        topics={
+            illumination_topic: 2,
+            control_topic: 2
+        }
     )
     task = loop.create_task(mqttc.run())
     try:

@@ -3,6 +3,7 @@
 
 import asyncio
 import contextlib
+import json
 import logging
 import logging.config
 import signal
@@ -17,8 +18,9 @@ hostname = 'm15.cloudmqtt.com'
 port = 16076
 username = 'lpkbaxec'
 password = 'limdi7J_A3Tc'
-illumination_topic = 'testing-illumination'
-control_topic = 'testing-control'
+illumination_topic = 'illumination'
+control_topic = 'control'
+message_encoding = 'utf-8'
 
 # Set up logging
 logging.config.dictConfig({
@@ -59,8 +61,7 @@ class Illuminator(AsyncioClient):
         """Initialize client state."""
         super().__init__(*args, **kwargs)
         self.lights = il.Illumination()
-        self.modes = ['clear', 'breathe', 'wipe', 'theater', 'rainbow']
-        self.mode_actions = {
+        self.mode_handlers = {
             'clear': self.clear,
             'breathe': self.breathe,
             'wipe': self.wipe,
@@ -68,21 +69,22 @@ class Illuminator(AsyncioClient):
             'rainbow': self.rainbow
         }
         self.illumination_task = None
+        self.illumination_params = None
 
     def on_connect(self, client, userdata, flags, rc):
         """When the client connects, handle it."""
-        self.set_illumination_mode('clear')
+        self.set_illumination({'mode': 'clear'})
         super().on_connect(client, userdata, flags, rc)
         self.client.publish('connect', 'illumination client', qos=2)
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
-        self.set_illumination_mode('breathe')
+        self.set_illumination({'mode': 'breathe'})
         super().on_disconnect(client, userdata, rc)
 
     def on_control_topic(self, client, userdata, msg):
         """Handle any program control messages."""
-        command = msg.payload.decode('utf-8')
+        command = msg.payload.decode(message_encoding)
         if command == 'restart':
             logger.info('Restarting...')
             process = self.loop.create_task(asyncio.create_subprocess_exec(
@@ -92,63 +94,111 @@ class Illuminator(AsyncioClient):
 
     def on_illumination_topic(self, client, userdata, msg):
         """Handle any illumination messages."""
-        mode_code = int(msg.payload)
+        payload = msg.payload.decode(message_encoding)
         try:
-            mode = self.modes[mode_code]
-        except IndexError:
-            logger.error('Unknown mode code: {}'.format(mode_code))
-            mode = 'clear'
-        logger.info('Setting illumination mode to: {}'.format(mode))
-        self.set_illumination_mode(mode)
+            illumination_params = json.loads(payload)
+        except json.JSONDecodeError:
+            logger.error('Malformed illumination parameters: {}'.format(payload))
+            return
+        try:
+            mode = illumination_params['mode']
+            mode_handler = self.mode_handlers[mode]
+        except (KeyError, IndexError):
+            logger.error('Unknown/missing illumination mode: {}'.format(payload))
+            return
+        logger.info('Setting illumination: {}'.format(payload))
+        self.set_illumination(illumination_params)
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
         self.client.message_callback_add(control_topic, self.on_control_topic)
         self.client.message_callback_add(illumination_topic, self.on_illumination_topic)
 
-    async def clear(self):
+    async def clear(self, params):
         try:
             self.lights.clear()
         except KeyboardInterrupt:
             self.lights.clear()
 
-    async def breathe(self):
+    async def breathe(self, params):
+        intensity = params.get('intensity', 255)
+        wait_ms = params.get('wait_ms', 2)
         try:
             while True:
-                await self.lights.breathe(255)
+                await self.lights.breathe(intensity, wait_ms=wait_ms)
         except KeyboardInterrupt:
             pass
 
-    async def wipe(self):
+    async def wipe(self, params):
+        loop = params.get('loop', True)
+        colors = params.get('colors', [])
+        if len(colors) < 1:
+            colors.append({
+                'red': 0, 'green': 0, 'blue': 255,
+                'hold': 0, 'wait_ms': 40
+            })
+        if loop and len(colors) < 2:
+            colors.append({
+                'red': 0, 'green': 0, 'blue': 0,
+                'hold': 0, 'wait_ms': 40
+            })
+        led_colors = [
+            (
+                ws.Color(
+                    color.get('red', 0),
+                    color.get('green', 0),
+                    color.get('blue', 0)
+                ),
+                color.get('wait_ms', 40),
+                color.get('hold_ms', 0)
+            )
+            for color in colors
+        ]
         try:
             while True:
-                await self.lights.color_wipe(ws.Color(0, 0, 255), wait_ms=40)
-                await self.lights.color_wipe(ws.Color(0, 0, 0), wait_ms=40)
+                for (led_color, wait_ms, hold_duration) in led_colors:
+                    await self.lights.color_wipe(led_color, wait_ms=wait_ms)
+                    await asyncio.sleep(hold_duration / 1000.0)
+                if not loop:
+                    break
         except KeyboardInterrupt:
             pass
 
-    async def theater(self):
+    async def theater(self, params):
+        color = params.get('color', {'red': 0, 'green': 0, 'blue': 255})
+        color = ws.Color(
+            color.get('red', 0),
+            color.get('green', 0),
+            color.get('blue', 0)
+        )
+        wait_ms = params.get('wait_ms', 200)
         try:
             while True:
-                await self.lights.theater_chase(ws.Color(0, 0, 255), wait_ms=200)
+                await self.lights.theater_chase(color, wait_ms=wait_ms)
         except KeyboardInterrupt:
             pass
 
-    async def rainbow(self):
+    async def rainbow(self, params):
+        wait_ms = params.get('wait_ms', 2)
         try:
             while True:
-                await self.lights.rainbow_cycle(wait_ms=2)
+                await self.lights.rainbow_cycle(wait_ms=wait_ms)
         except KeyboardInterrupt:
             pass
 
-    def set_illumination_mode(self, mode):
+    def set_illumination(self, illumination_params):
         if self.illumination_task is not None:
             self.illumination_task.cancel()
-        self.illumination_task = self.loop.create_task(self.mode_actions[mode]())
+        mode = illumination_params['mode']
+        self.illumination_params = illumination_params
+        print(illumination_params)
+        self.illumination_task = self.loop.create_task(
+            self.mode_handlers[mode](illumination_params)
+        )
 
     def on_run(self):
         """When the client start the run loop, handle it."""
-        self.set_illumination_mode('breathe')
+        self.set_illumination({'mode': 'breathe'})
 
     def on_quit(self):
         """When the client quits the run loop, handle it."""

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Test script to send a hello world message to a test MQTT topic."""
 
 import asyncio

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Test script to control illumination from a MQTT topic."""
 
 import asyncio
@@ -6,6 +5,7 @@ import contextlib
 import json
 import logging
 import logging.config
+import os
 import signal
 
 from intervention_client import illumination as il
@@ -14,17 +14,25 @@ from intervention_client.mqtt import AsyncioClient
 
 import rpi_ws281x as ws
 
+repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+project_path = os.path.dirname(repo_path)
+
+# Config file paths
+config_path = '/media/usb0/settings_encrypted.json'
+keyfile_path = os.path.join(project_path, 'settings.key')
+
 # Program parameters
-usb_path = '/media/usb0/settings.json'
-configuration = config.load_config(usb_path)
-pi_username = configuration['pi username']
-hostname = configuration['hostname']
-port = configuration['port']
-username = configuration['username']
-password = configuration['password']
 illumination_topic = 'illumination'
 deploy_topic = 'deploy'
 message_encoding = 'utf-8'
+
+# Load configuration
+configuration = config.load_config(config_path, keyfile_path=keyfile_path)
+pi_username = configuration['pi username']
+hostname = configuration['hostname']
+port = int(configuration['port'])
+username = configuration['username']
+password = configuration['password']
 
 # Set up logging
 logging.config.dictConfig({
@@ -48,7 +56,6 @@ logging.config.dictConfig({
     }
 })
 logger = logging.getLogger(__name__)
-
 
 def signal_handler(signum, frame):
     """Catch any interrupt signal and raise a KeyboardInterrupt.

@@ -94,10 +94,9 @@ class Illuminator(AsyncioClient):
     async def restart(self):
         logger.info('Restarting...')
         process = await asyncio.create_subprocess_exec(
-            'shutdown', '-r', 'now',
+            'systemctl', 'reboot',
             stdout=asyncio.subprocess.PIPE
         )
-        await process.communicate()
 
     async def git_pull(self):
         logger.info('Updating local repo...')

@@ -38,20 +38,18 @@ the script quits.
 ## Deployment Setup
 These instructions assume that the username of the default user on the Raspberry Pi has
 been changed from `pi` to `pac`.
-To automatically run the prototype when the Raspberry Pi starts up, add a call to the
-`startup.sh` script to `/etc/rc.local`, for example by adding the following lines before
-the last `exit 0` line of `/etc/rc.local`:
-```
-./home/pac/hand-hygiene/intervention/startup.sh
-```
-You can also copy the `rc.local` script, which also has a few lines for printing
-additional information upon startup, as follows:
+To automatically run the prototype when the Raspberry Pi starts up, install the
+`mqtt_illumination.service` systemd unit:
 ```
 cd ~/hand-hygiene/intervention
-sudo cp rc.local /etc/rc.local
+sudo cp mqtt_illumination.service /etc/systemd/system/mqtt_illumination.service
+sudo systemctl enable mqtt_illumination
 ```
-You can kill the script initiated from startup by running the `cancel_startup.sh` script
-with root privileges, as follows:
+You can manually start the service with systemd, view the status of the service with systemd,
+view its output logs with journalctl, or kill the script with systemd:
 ```
-./hand-hygiene/intervention/cancel_startup.sh
+sudo systemctl start mqtt_illumination
+systemctl status mqtt_illumination
+journalctl -u mqtt_illumination
+sudo systemctl stop mqtt_illumination
 ```

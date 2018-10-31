@@ -1,5 +1,5 @@
 #!/bin/bash
-DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+DIRNAME="/home/pac/hand-hygiene/intervention/"
 PIDFILE="/var/run/mqtt_illumination.pid"
 STARTWAIT=5
 

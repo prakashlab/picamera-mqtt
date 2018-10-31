@@ -98,6 +98,8 @@ class Illuminator(AsyncioClient):
         command = msg.payload.decode(message_encoding)
         if command == 'restart':
             self.loop.create_task(self.restart())
+        elif command == 'shutdown':
+            self.loop.create_task(self.shutdown())
         elif command == 'git pull':
             self.loop.create_task(self.git_pull())
 
@@ -105,6 +107,13 @@ class Illuminator(AsyncioClient):
         logger.info('Restarting...')
         process = await asyncio.create_subprocess_exec(
             'systemctl', 'reboot',
+            stdout=asyncio.subprocess.PIPE
+        )
+
+    async def shutdown(self):
+        logger.info('Shutting down...')
+        process = await asyncio.create_subprocess_exec(
+            'systemctl', 'poweroff',
             stdout=asyncio.subprocess.PIPE
         )
 

@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import socket
+import ssl
 
 import paho.mqtt.client as mqtt
 
@@ -49,6 +50,7 @@ class AsyncioClient(object):
 
     def __init__(
         self, loop, hostname, port, username=None, password=None,
+        ca_certs=None, tls_version=ssl.PROTOCOL_TLSv1_2,
         client_id='', topics={},
         clean_session=True, ping_interval=2, ping_timeout=1
     ):
@@ -72,6 +74,10 @@ class AsyncioClient(object):
             self.client.username_pw_set(username, password)
         self.hostname = hostname
         self.port = port
+        if ca_certs is not None:
+            self.client.tls_set(
+                ca_certs=ca_certs, cert_reqs=ssl.CERT_REQUIRED, tls_version=tls_version
+            )
 
         if topics:
             self.topics = {topic: qos for (topic, qos) in topics.items()}

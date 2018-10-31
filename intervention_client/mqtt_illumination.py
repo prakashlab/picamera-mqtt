@@ -33,6 +33,7 @@ hostname = configuration['hostname']
 port = int(configuration['port'])
 username = configuration['username']
 password = configuration['password']
+ca_certs = '/etc/ssl/certs/ca-certificates.crt'
 
 # Set up logging
 logging.config.dictConfig({
@@ -246,7 +247,8 @@ if __name__ == '__main__':
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()
     mqttc = Illuminator(
-        loop, hostname, port, username=username, password=password,
+        loop, hostname, port,
+        username=username, password=password, ca_certs=ca_certs,
         topics={
             illumination_topic: 2,
             deploy_topic: 2

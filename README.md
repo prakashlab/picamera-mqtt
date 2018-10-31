@@ -38,11 +38,17 @@ the script quits.
 ## Deployment Setup
 These instructions assume that the username of the default user on the Raspberry Pi has
 been changed from `pi` to `pac`.
+You will need to set up usb automount:
+```
+cd ~/hand-hygiene/intervention
+sudo apt-get install usbmount
+sudo cp -r systemd/systemd-udevd.service.d /etc/systemd/system/
+```
 To automatically run the prototype when the Raspberry Pi starts up, install the
 `mqtt_illumination.service` systemd unit:
 ```
 cd ~/hand-hygiene/intervention
-sudo cp mqtt_illumination.service /etc/systemd/system/mqtt_illumination.service
+sudo cp systemd/mqtt_illumination.service /etc/systemd/system/mqtt_illumination.service
 sudo systemctl enable mqtt_illumination
 ```
 You can manually start the service with systemd, view the status of the service with systemd,

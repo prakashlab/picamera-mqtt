@@ -9,16 +9,19 @@ import logging.config
 import signal
 
 from intervention_client import illumination as il
+from intervention_client import config
 from intervention_client.mqtt import AsyncioClient
 
 import rpi_ws281x as ws
 
 # Program parameters
-pi_username = 'pac'
-hostname = 'm15.cloudmqtt.com'
-port = 16076
-username = 'lpkbaxec'
-password = 'limdi7J_A3Tc'
+usb_path = '/media/usb0/settings.json'
+configuration = config.load_config(usb_path)
+pi_username = configuration['pi username']
+hostname = configuration['hostname']
+port = configuration['port']
+username = configuration['username']
+password = configuration['password']
 illumination_topic = 'illumination'
 deploy_topic = 'deploy'
 message_encoding = 'utf-8'

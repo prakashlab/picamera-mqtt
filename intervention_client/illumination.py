@@ -3,7 +3,10 @@
 
 import asyncio
 
-import rpi_ws281x as ws
+try:
+    import rpi_ws281x as ws
+except ModuleNotFoundError:
+    print('Warning: this script must be run on a Raspberry Pi for illumination!')
 
 
 def wheel(pos):

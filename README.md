@@ -53,13 +53,13 @@ Next, you will need to generate a keyfile at `~/hand-hygiene/settings.key`
 to encrypt the config file, and then encrypt the config file:
 ```
 cd ~/hand-hygiene/intervention
-python3 -m intervention_client.generate_key
+python3 -m intervention_client.tools.generate_key
 ```
 Next, you will need to encrypt the settings file using your key to generate a
 file at `/media/usb0/settings_encrypted.json`:
 ```
 cd ~/hand-hygiene/intervention
-sudo python3 -m intervention_client.encrypt_config
+sudo python3 -m intervention_client.tools.encrypt_config
 ```
 Finally, you should copy the `settings.key` keyfile and the unencrypted `settings.json`
 file to somewhere for safe-keeping. You may want to copy the `settings.key` file onto the
@@ -74,7 +74,7 @@ encrypt it to a `settings_encoded.json` file at a path you set:
 ```
 cd ~/hand-hygiene/intervention
 vim /path/to/settings.json
-python3 -m intervention_client.encrypt_config --input /path/to/settings.json --key /path/to/settings.key --output /path/to/settings_encoded.json
+python3 -m intervention_client.tools.encrypt_config --input /path/to/settings.json --key /path/to/settings.key --output /path/to/settings_encoded.json
 ```
 Then you can shut down the Raspberry Pi running the client, remove the USB drive,
 copy the new `settings_encoded.json` file onto the USB drive to overwrite it, and

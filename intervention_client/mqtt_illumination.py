@@ -9,34 +9,19 @@ import os
 import signal
 
 from intervention_client import config
-from intervention_client import illumination as il
 from intervention_client.mqtt import AsyncioClient
-
-import rpi_ws281x as ws
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 project_path = os.path.dirname(repo_path)
-
-# Config file paths
-config_path = '/media/usb0/settings_encrypted.json'
-keyfile_path = os.path.join(project_path, 'settings.key')
 
 # Program parameters
 illumination_topic = 'illumination'
 deploy_topic = 'deploy'
 message_encoding = 'utf-8'
 
-# Load configuration
-configuration = config.load_config(config_path, keyfile_path=keyfile_path)
-pi_username = configuration['pi username']
-hostname = configuration['hostname']
-port = int(configuration['port'])
-username = configuration['username']
-password = configuration['password']
-ca_certs = '/etc/ssl/certs/ca-certificates.crt'
 
 # Set up logging
-logging.config.dictConfig({
+logging_config = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
@@ -55,7 +40,8 @@ logging.config.dictConfig({
         'handlers': ['h'],
         'level': logging.INFO
     }
-})
+}
+logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
 
 
@@ -70,10 +56,11 @@ def signal_handler(signum, frame):
 class Illuminator(AsyncioClient):
     """Sets NeoPixel illumination based on messages from the broker."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, pi_username='pi', **kwargs):
         """Initialize client state."""
         super().__init__(*args, **kwargs)
-        self.lights = il.Illumination()
+
+        self.init_illumination()
         self.mode_handlers = {
             'clear': self.clear,
             'breathe': self.breathe,
@@ -83,6 +70,15 @@ class Illuminator(AsyncioClient):
         }
         self.illumination_task = None
         self.illumination_params = None
+
+        self.pi_username = pi_username
+
+    def init_illumination(self):
+        """Initialize illumination support."""
+        # Only import if needed
+        from intervention_client import illumination as il
+
+        self.lights = il.Illumination()
 
     def on_connect(self, client, userdata, flags, rc):
         """When the client connects, handle it."""
@@ -125,7 +121,7 @@ class Illuminator(AsyncioClient):
         """Trigger a repository update and subsequent system restart."""
         logger.info('Updating local repo...')
         process = await asyncio.create_subprocess_exec(
-                'sudo', '-u', pi_username, 'git', 'pull',
+                'sudo', '-u', self.pi_username, 'git', 'pull',
                 stdout=asyncio.subprocess.PIPE
             )
         await process.communicate()
@@ -145,7 +141,6 @@ class Illuminator(AsyncioClient):
         except (KeyError, IndexError):
             logger.error('Unknown/missing illumination mode: {}'.format(payload))
             return
-        logger.info('Setting illumination: {}'.format(payload))
         self.set_illumination(illumination_params)
 
     def add_topic_handlers(self):
@@ -172,6 +167,9 @@ class Illuminator(AsyncioClient):
 
     async def wipe(self, params):
         """Wipe the lights with colors."""
+        # Only import if needed
+        import rpi_ws281x as ws
+
         loop = params.get('loop', True)
         colors = params.get('colors', [])
         if len(colors) < 1:
@@ -208,6 +206,9 @@ class Illuminator(AsyncioClient):
 
     async def theater(self, params):
         """Run a theater marquee on the lights."""
+        # Only import if needed
+        import rpi_ws281x as ws
+
         color = params.get('color', {'red': 0, 'green': 0, 'blue': 255})
         color = ws.Color(
             color.get('red', 0),
@@ -232,6 +233,7 @@ class Illuminator(AsyncioClient):
 
     def set_illumination(self, illumination_params):
         """Set the lights to some illumination."""
+        logger.info('Setting illumination: {}'.format(illumination_params))
         if self.illumination_task is not None:
             self.illumination_task.cancel()
         mode = illumination_params['mode']
@@ -252,6 +254,19 @@ class Illuminator(AsyncioClient):
 
 
 if __name__ == '__main__':
+    # Config file paths
+    config_path = '/media/usb0/settings_encrypted.json'
+    keyfile_path = os.path.join(project_path, 'settings.key')
+
+    # Load configuration
+    configuration = config.load_config(config_path, keyfile_path=keyfile_path)
+    hostname = configuration['hostname']
+    port = int(configuration['port'])
+    username = configuration['username']
+    password = configuration['password']
+    ca_certs = '/etc/ssl/certs/ca-certificates.crt'
+    pi_username = configuration['pi username']
+
     signal.signal(signal.SIGINT, signal_handler)
 
     logger.info('Starting client...')
@@ -262,7 +277,7 @@ if __name__ == '__main__':
         topics={
             illumination_topic: 2,
             deploy_topic: 2
-        }
+        }, pi_username=pi_username
     )
     task = loop.create_task(mqttc.run())
     try:

@@ -81,6 +81,8 @@ class AsyncioClient(object):
 
         if topics:
             self.topics = {topic: qos for (topic, qos) in topics.items()}
+        else:
+            self.topics = {}
 
         self.ping_interval = ping_interval
         self.ping_timeout = ping_timeout
@@ -132,6 +134,20 @@ class AsyncioClient(object):
         """When the client quits the run loop, handle it."""
         pass
 
+    async def attempt_reconnect(self):
+        """Prepare the system for a reconnection attempt."""
+        logger.info('Restarting dhcpcd systemctl service...')
+        process = await asyncio.create_subprocess_exec(
+            'systemctl', 'daemon-reload',
+            stdout=asyncio.subprocess.PIPE
+        )
+        await process.communicate()
+        process = await asyncio.create_subprocess_exec(
+            'systemctl', 'restart', 'dhcpcd',
+            stdout=asyncio.subprocess.PIPE
+        )
+        await process.communicate()
+
     async def loop_until_connect(self, reconnect=False):
         """Repeatedly attempt to connect until successful."""
         while True:
@@ -144,17 +160,7 @@ class AsyncioClient(object):
                     'DNS lookup of hostname {} failed, trying again...'
                     .format(self.hostname)
                 )
-                logger.info('Restarting dhcpcd systemctl service...')
-                process = await asyncio.create_subprocess_exec(
-                    'systemctl', 'daemon-reload',
-                    stdout=asyncio.subprocess.PIPE
-                )
-                await process.communicate()
-                process = await asyncio.create_subprocess_exec(
-                    'systemctl', 'restart', 'dhcpcd',
-                    stdout=asyncio.subprocess.PIPE
-                )
-                await process.communicate()
+                await self.attempt_reconnect()
 
         logger.info('Connected to {}:{}.'.format(self.hostname, self.port))
 
@@ -169,6 +175,9 @@ class AsyncioClient(object):
 
         while True:
             try:
+                if self.disconnected.done() and self.disconnected.result():
+                    logger.info('Reconnecting...')
+                    await self.loop_until_connect(reconnect=True)
                 await self.run_iteration()
             except asyncio.CancelledError:
                 break
@@ -179,9 +188,6 @@ class AsyncioClient(object):
 
     async def run_iteration(self):
         """Run one iteration of the run loop."""
-        if self.disconnected.done() and self.disconnected.result():
-            logger.info('Reconnecting...')
-            await self.loop_until_connect(reconnect=True)
         await asyncio.sleep(self.ping_interval - self.ping_timeout)
         message = self.client.publish('ping', 'illumination client', qos=1)
         self.ping_mid = message.mid

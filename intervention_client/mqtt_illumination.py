@@ -8,8 +8,8 @@ import logging.config
 import os
 import signal
 
-from intervention_client import illumination as il
 from intervention_client import config
+from intervention_client import illumination as il
 from intervention_client.mqtt import AsyncioClient
 
 import rpi_ws281x as ws
@@ -58,6 +58,7 @@ logging.config.dictConfig({
 })
 logger = logging.getLogger(__name__)
 
+
 def signal_handler(signum, frame):
     """Catch any interrupt signal and raise a KeyboardInterrupt.
 
@@ -105,20 +106,23 @@ class Illuminator(AsyncioClient):
             self.loop.create_task(self.git_pull())
 
     async def restart(self):
+        """Trigger a system restart."""
         logger.info('Restarting...')
-        process = await asyncio.create_subprocess_exec(
+        await asyncio.create_subprocess_exec(
             'systemctl', 'reboot',
             stdout=asyncio.subprocess.PIPE
         )
 
     async def shutdown(self):
+        """Trigger a system shutdown."""
         logger.info('Shutting down...')
-        process = await asyncio.create_subprocess_exec(
+        await asyncio.create_subprocess_exec(
             'systemctl', 'poweroff',
             stdout=asyncio.subprocess.PIPE
         )
 
     async def git_pull(self):
+        """Trigger a repository update and subsequent system restart."""
         logger.info('Updating local repo...')
         process = await asyncio.create_subprocess_exec(
                 'sudo', '-u', pi_username, 'git', 'pull',
@@ -137,7 +141,7 @@ class Illuminator(AsyncioClient):
             return
         try:
             mode = illumination_params['mode']
-            mode_handler = self.mode_handlers[mode]
+            self.mode_handlers[mode]
         except (KeyError, IndexError):
             logger.error('Unknown/missing illumination mode: {}'.format(payload))
             return
@@ -150,12 +154,14 @@ class Illuminator(AsyncioClient):
         self.client.message_callback_add(illumination_topic, self.on_illumination_topic)
 
     async def clear(self, params):
+        """Clear the lights."""
         try:
             self.lights.clear()
         except KeyboardInterrupt:
             self.lights.clear()
 
     async def breathe(self, params):
+        """Breathe the lights between white and dark."""
         intensity = params.get('intensity', 255)
         wait_ms = params.get('wait_ms', 2)
         try:
@@ -165,6 +171,7 @@ class Illuminator(AsyncioClient):
             pass
 
     async def wipe(self, params):
+        """Wipe the lights with colors."""
         loop = params.get('loop', True)
         colors = params.get('colors', [])
         if len(colors) < 1:
@@ -200,6 +207,7 @@ class Illuminator(AsyncioClient):
             pass
 
     async def theater(self, params):
+        """Run a theater marquee on the lights."""
         color = params.get('color', {'red': 0, 'green': 0, 'blue': 255})
         color = ws.Color(
             color.get('red', 0),
@@ -214,6 +222,7 @@ class Illuminator(AsyncioClient):
             pass
 
     async def rainbow(self, params):
+        """Move a rainbow across the lights."""
         wait_ms = params.get('wait_ms', 2)
         try:
             while True:
@@ -222,6 +231,7 @@ class Illuminator(AsyncioClient):
             pass
 
     def set_illumination(self, illumination_params):
+        """Set the lights to some illumination."""
         if self.illumination_task is not None:
             self.illumination_task.cancel()
         mode = illumination_params['mode']

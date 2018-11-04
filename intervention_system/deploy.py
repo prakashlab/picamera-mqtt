@@ -30,6 +30,24 @@ client_config_sample_cloudmqtt_path = os.path.join(
 service_name = 'mqtt_illumination'
 
 
+async def daemon_reload():
+    """Trigger a system daemon unit reload."""
+    process = await asyncio.create_subprocess_exec(
+        'systemctl', 'daemon-reload',
+        stdout=asyncio.subprocess.PIPE
+    )
+    await process.communicate()
+
+async def reconnect():
+    """Trigger a system dhcpcd restart."""
+    logger.info('Restarting dhcpcd systemctl service...')
+    await daemon_reload()
+    process = await asyncio.create_subprocess_exec(
+        'systemctl', 'restart', 'dhcpcd',
+        stdout=asyncio.subprocess.PIPE
+    )
+    await process.communicate()
+
 async def reboot():
     """Trigger a system reboot."""
     logger.info('Rebooting system...')
@@ -53,6 +71,7 @@ async def shutdown():
 async def restart():
     """Trigger a service restart."""
     logger.info('Restarting service...')
+    await daemon_reload()
     await asyncio.create_subprocess_exec(
         'systemctl', 'restart', service_name,
         stdout=asyncio.subprocess.PIPE

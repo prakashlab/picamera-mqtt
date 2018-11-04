@@ -138,17 +138,7 @@ class AsyncioClient(object):
 
     async def attempt_reconnect(self):
         """Prepare the system for a reconnection attempt."""
-        logger.info('Restarting dhcpcd systemctl service...')
-        process = await asyncio.create_subprocess_exec(
-            'systemctl', 'daemon-reload',
-            stdout=asyncio.subprocess.PIPE
-        )
-        await process.communicate()
-        process = await asyncio.create_subprocess_exec(
-            'systemctl', 'restart', 'dhcpcd',
-            stdout=asyncio.subprocess.PIPE
-        )
-        await process.communicate()
+        pass
 
     async def loop_until_connect(self, reconnect=False):
         """Repeatedly attempt to connect until successful."""

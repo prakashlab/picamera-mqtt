@@ -45,10 +45,6 @@ class MockDetector(AsyncioClient):
         super().on_connect(client, userdata, flags, rc)
         self.client.publish('connect', 'detection client', qos=2)
 
-    async def attempt_reconnect(self):
-        """Prepare the system for a reconnection attempt."""
-        pass
-
     async def run_iteration(self):
         """Run one iteration of the run loop."""
         illumination_message = random.choice(illumination_messages)

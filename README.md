@@ -2,13 +2,52 @@
 Alert system prototype for the Stanford PAC Hand Hygiene Intervention Project.
 This software needs to be run from a Raspberry Pi.
 
+## MQTT Broker Server Setup
+
+To run the MQTT broker server, edit `deploy/config/broker.conf` and then run
+`deploy/mqtt_broker.sh`.
+
 ## Client Deployment Setup
+
 These instructions are for setting up a Raspberry Pi to deploy a visual alert client.
 
 ### Preparation
 
+You will need to install some packages on the Raspberry Pi, as follows:
+```
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install git python3-pip
+sudo apt-get install vim byobu wicd-curses # optional, but makes your life easier
+```
+
+You will need to use the `raspi-config` tool to change the password of the pi user,
+set the locale to `en_US UTF-8`, set the keyboard layout to `English (US)`,
+change the hostname of the Raspberry Pi, and set the Raspberry Pi to wait for an
+internet connection upon startup.
+
+You will need to edit the `/etc/wpa_supplicant/wpa_supplicant.conf` configuration
+file to connect to wi-fi if you are deploying the Raspberry Pi with a Wi-Fi connection.
+
+For security, you should change the username of the pi user to something else.
+This will involve temporarily enabling the `root` account and using `usermod`. For example,
+to change it to `pac`:
+```
+# log in as pi, then:
+sudo passwd -l root # set a password for the root account to enable it!
+logout # log out of the pi account!
+# then log in as root, using the password you just set, then:
+usermod -l pac pi # rename the pi account to pac!
+usermod -m -d /home/pac pac # rename the pi home folder!
+logout # log out of the pac account!
+# then log in as pac, then:
+sudo passwd -l root # set an empty password for the root account to disable it!
+```
+
 You will need to have a USB drive handy. It will need to have a `settings.json` file
 in the root of the drive. For an example file, refer to `deploy/config/settings_cloudmqtt.json`.
+The `pi_username` parameter in the `settings.json` file should match the username
+of the pi user on the Raspberry Pi.
 
 ### Client Hardware Setup
 Connect a NeoPixel Stick to the Raspberry Pi as follows:
@@ -106,11 +145,10 @@ journalctl -u mqtt_illumination
 sudo systemctl stop mqtt_illumination
 ```
 
-## MQTT Broker Server Setup
-
 ### Physical Security
 To prevent the Raspberry Pi's SD card from being removed so that an attacker can read the keyfile
 on the SD card without knowing the login credentials of the Raspberry Pi, either superglue the SD
 card into the Raspberry Pi board or pot it with epoxy.
 
 ### Mounting
+TODO

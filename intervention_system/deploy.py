@@ -38,6 +38,7 @@ async def daemon_reload():
     )
     await process.communicate()
 
+
 async def reconnect():
     """Trigger a system dhcpcd restart."""
     logger.info('Restarting dhcpcd systemctl service...')
@@ -47,6 +48,7 @@ async def reconnect():
         stdout=asyncio.subprocess.PIPE
     )
     await process.communicate()
+
 
 async def reboot():
     """Trigger a system reboot."""

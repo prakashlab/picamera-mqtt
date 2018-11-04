@@ -46,6 +46,11 @@ class MockIlluminator(Illuminator):
         """Set the lights to some illumination."""
         logger.info('Mock setting lights to: {}'.format(illumination_params))
 
+    async def attempt_reconnect(self):
+        """Prepare the system for a reconnection attempt."""
+        logger.info('Mock reconnecting (nop)...')
+        await asyncio.sleep(1)
+
 
 if __name__ == '__main__':
     register_keyboard_interrupt_signals()

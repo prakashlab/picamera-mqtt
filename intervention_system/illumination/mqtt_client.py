@@ -20,7 +20,7 @@ logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
 
 # Configure configuration file loading
-use_encrypted_settings = True
+use_encrypted_settings = False
 
 # Configure messaging
 topics = {
@@ -207,6 +207,10 @@ class Illuminator(AsyncioClient):
         """When the client quits the run loop, handle it."""
         if self.illumination_task is not None:
             self.illumination_task.cancel()
+
+    async def attempt_reconnect(self):
+        """Prepare the system for a reconnection attempt."""
+        await deploy.reconnect()
 
 
 if __name__ == '__main__':

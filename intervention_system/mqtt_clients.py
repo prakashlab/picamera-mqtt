@@ -6,7 +6,6 @@ import ssl
 
 import paho.mqtt.client as mqtt
 
-# Set up logging
 logger = logging.getLogger(__name__)
 
 message_string_encoding = 'utf-8'

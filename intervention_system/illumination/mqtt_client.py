@@ -6,9 +6,7 @@ import logging
 import logging.config
 import os
 
-from intervention_system.deploy import (
-    settings_key_path, client_config_plain_path, client_config_cipher_path
-)
+from intervention_system import deploy
 from intervention_system.mqtt_clients import AsyncioClient, message_string_encoding
 from intervention_system.protocol import illumination_topic, deployment_topic
 from intervention_system.util import config
@@ -73,38 +71,18 @@ class Illuminator(AsyncioClient):
     def on_deployment_topic(self, client, userdata, msg):
         """Handle any device deployment messages."""
         command = msg.payload.decode(message_string_encoding)
-        if command == 'restart':
-            self.loop.create_task(self.restart())
+        if command == 'reboot':
+            self.loop.create_task(deploy.reboot())
         elif command == 'shutdown':
-            self.loop.create_task(self.shutdown())
+            self.loop.create_task(deploy.shutdown())
+        elif command == 'restart':
+            self.loop.create_task(deploy.restart())
         elif command == 'git pull':
-            self.loop.create_task(self.git_pull())
-
-    async def restart(self):
-        """Trigger a system restart."""
-        logger.info('Restarting...')
-        await asyncio.create_subprocess_exec(
-            'systemctl', 'reboot',
-            stdout=asyncio.subprocess.PIPE
-        )
-
-    async def shutdown(self):
-        """Trigger a system shutdown."""
-        logger.info('Shutting down...')
-        await asyncio.create_subprocess_exec(
-            'systemctl', 'poweroff',
-            stdout=asyncio.subprocess.PIPE
-        )
-
-    async def git_pull(self):
-        """Trigger a repository update and subsequent system restart."""
-        logger.info('Updating local repo...')
-        process = await asyncio.create_subprocess_exec(
-                'sudo', '-u', self.pi_username, 'git', 'pull',
-                stdout=asyncio.subprocess.PIPE
-            )
-        await process.communicate()
-        await self.restart()
+            self.loop.create_task(deploy.git_pull(
+                self.pi_username, restart_afterwards=True
+            ))
+        elif command == 'stop':
+            raise KeyboardInterrupt
 
     def on_illumination_topic(self, client, userdata, msg):
         """Handle any illumination messages."""
@@ -236,10 +214,10 @@ if __name__ == '__main__':
 
     # Load configuration
     if use_encrypted_settings:
-        config_path = client_config_cipher_path
-        keyfile_path = settings_key_path
+        config_path = deploy.client_config_cipher_path
+        keyfile_path = deploy.settings_key_path
     else:
-        config_path = client_config_plain_path
+        config_path = deploy.client_config_plain_path
         keyfile_path = None
     configuration = config.config_load(config_path, keyfile_path=keyfile_path)
 

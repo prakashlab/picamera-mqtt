@@ -2,15 +2,17 @@
 
 import asyncio
 import logging
+import logging.config
 
+from intervention_system.deploy import client_config_sample_cloudmqtt_path
 from intervention_system.mqtt_clients import AsyncioClient, message_string_encoding
-from intervention_system.util.async import run_function
+from intervention_system.util import config
+from intervention_system.util.async import (
+    register_keyboard_interrupt_signals, run_function
+)
+from intervention_system.util.logging import logging_config
 
 # Program parameters
-hostname = 'm15.cloudmqtt.com'
-port = 16076
-username = 'lpkbaxec'
-password = 'limdi7J_A3Tc'
 topic = 'testing-publish'
 message = 'hello, world!'
 publish_interval = 4
@@ -18,12 +20,8 @@ publish_qos = 2
 receive_qos = 2
 
 # Set up logging
+logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 
 class Publisher(AsyncioClient):
@@ -47,11 +45,16 @@ class Publisher(AsyncioClient):
 
 
 if __name__ == '__main__':
+    register_keyboard_interrupt_signals()
+
+    # Load configuration
+    config_path = client_config_sample_cloudmqtt_path
+    configuration = config.config_load(config_path, keyfile_path=None)
+
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()
     mqttc = Publisher(
-        loop, hostname, port,
-        username=username, password=password, topics={topic: receive_qos}
+        loop, **configuration['broker'], topics={topic: receive_qos}
     )
     run_function(mqttc.run)
     logger.info('Finished!')

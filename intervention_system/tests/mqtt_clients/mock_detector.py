@@ -6,7 +6,7 @@ import logging.config
 import os
 import random
 
-from intervention_system import repo_path
+from intervention_system.deploy import client_config_sample_cloudmqtt_path
 from intervention_system.mqtt_clients import AsyncioClient
 from intervention_system.protocol import illumination_topic
 from intervention_system.util import config
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     register_keyboard_interrupt_signals()
 
     # Load configuration
-    config_path = os.path.join(repo_path, 'deploy', 'config', 'settings.json')
+    config_path = client_config_sample_cloudmqtt_path
     configuration = config.config_load(config_path, keyfile_path=None)
 
     logger.info('Starting client...')

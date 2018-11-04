@@ -6,7 +6,9 @@ import logging
 import logging.config
 import os
 
-from intervention_system import repo_path
+from intervention_system.deploy import (
+    settings_key_path, client_config_plain_path, client_config_cipher_path
+)
 from intervention_system.mqtt_clients import AsyncioClient, message_string_encoding
 from intervention_system.protocol import illumination_topic, deployment_topic
 from intervention_system.util import config
@@ -15,12 +17,14 @@ from intervention_system.util.async import (
 )
 from intervention_system.util.logging import logging_config
 
-project_path = os.path.dirname(repo_path)
-
 # Set up logging
 logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
 
+# Configure configuration file loading
+use_encrypted_settings = True
+
+# Configure messaging
 topics = {
     illumination_topic: 2,
     deployment_topic: 2
@@ -231,8 +235,12 @@ if __name__ == '__main__':
     register_keyboard_interrupt_signals()
 
     # Load configuration
-    config_path = '/media/usb0/settings_encrypted.json'
-    keyfile_path = os.path.join(project_path, 'settings.key')
+    if use_encrypted_settings:
+        config_path = client_config_cipher_path
+        keyfile_path = settings_key_path
+    else:
+        config_path = client_config_plain_path
+        keyfile_path = None
     configuration = config.config_load(config_path, keyfile_path=keyfile_path)
 
     logger.info('Starting client...')

@@ -2,12 +2,13 @@
 import argparse
 import os
 
-from intervention_system import repo_path
+from intervention_system.deploy import settings_key_path as default_keyfile_path
+from intervention_system.deploy import client_config_cipher_path as default_input_path
+from intervention_system.deploy import client_configs_path
 from intervention_system.util import config
-from intervention_system.tools.config.encrypt_config import default_keyfile_path
 from intervention_system.tools.config.encrypt_config import default_output_path as default_input_path
 
-default_output_path = os.path.join(os.path.dirname(default_input_path), 'settings_decrypted.json')
+default_output_path = os.path.join(client_configs_path, 'settings_decrypted.json')
 
 def main(input_path, key_path, output_path):
     config_plain = config.config_load(input_path, key_path)

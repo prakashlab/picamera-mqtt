@@ -1,22 +1,20 @@
 {
   "broker": {
     "hostname": "m15.cloudmqtt.com",
-    "port": 16076,
+    "port": 26076,
     "username": "lpkbaxec",
     "password": "limdi7J_A3Tc",
-    "use_tls": false,
+    "use_tls": true,
     "ca_certs": "/etc/ssl/certs/ca-certificates.crt",
     "client_id": "",
     "clean_session": true
   },
   "deploy": {
-    "pi_username": "pac"
+    "pi_username": "pac",
+    "ping_interval": 2,
+    "ping_timeout": 1
   },
   "messaging": {
-    "encrypt_messages": false,
-    "ping": {
-      "interval": 2,
-      "timeout": 1
-    }
+    "encrypt_messages": false
   }
 } 

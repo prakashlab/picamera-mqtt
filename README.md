@@ -2,14 +2,22 @@
 Alert system prototype for the Stanford PAC Hand Hygiene Intervention Project.
 This software needs to be run from a Raspberry Pi.
 
-## Hardware Setup
+## Client Deployment Setup
+These instructions are for setting up a Raspberry Pi to deploy a visual alert client.
+
+### Preparation
+
+You will need to have a USB drive handy. It will need to have a `settings.json` file
+in the root of the drive. For an example file, refer to `deploy/config/settings_cloudmqtt.json`.
+
+### Client Hardware Setup
 Connect a NeoPixel Stick to the Raspberry Pi as follows:
 
 - Connect VIN of the NeoPixel Stick to the 3.3V power pin of the Raspberry Pi
 - Connect GND of the NeoPixel Stick to a GND pin of the Raspberry Pi
 - Connect DIN of the NeoPixel Stick to pin 18 (PWM0) of the Raspberry Pi
 
-## Software Setup
+### Client Software Setup
 Clone this repo, for example with:
 ```
 cd
@@ -17,10 +25,10 @@ mkdir hand-hygiene
 cd hand-hygiene
 git clone https://github.com/ethanjli/pac-hand-hygiene-intervention.git intervention
 ```
-Install required dependencies from `requirements.txt`, for example with:
+Install required dependencies from `requirements_deployment.txt`, for example with:
 ```
 cd ~/hand-hygiene/intervention
-sudo pip3 install -r requirements.txt
+sudo pip3 install -r requirements_deployment.txt
 ```
 You will have to blacklist the Broadcom audio kernel module, for example as follows:
 ```
@@ -33,14 +41,9 @@ cd ~/hand-hygiene/intervention
 sudo python3 -m intervention_system.tests.illumination.stick_patterns
 ```
 
-## Deployment Setup
-
-### Config File
-You will need to have a USB drive handy. It will need to have a `settings.json` file
-in the root of the drive. For an example file, refer to `deploy/config/settings.json`.
-
+### Client Config
 You will need to set up USB automount so that the Raspberry Pi can read the
-config file from the USB drive:
+config file from the USB drive you set up previously:
 ```
 cd ~/hand-hygiene/intervention
 sudo apt-get install usbmount
@@ -49,8 +52,8 @@ sudo cp -r deploy/systemd/systemd-udevd.service.d /etc/systemd/system/
 You may need to restart the Raspberry Pi after setting up USB automount.
 You should confirm that you can see a file at `/media/usb0/settings.json`.
 
-Next, you will need to generate a keyfile at `~/hand-hygiene/settings.key`,
-for file encryption:
+Next, you will need to generate a keyfile at
+`~/hand-hygiene/intervention/deploy/settings.key`, for file encryption:
 ```
 cd ~/hand-hygiene/intervention
 python3 -m intervention_system.tools.config.generate_key
@@ -84,7 +87,7 @@ copy the new `settings_encrypted.json` file onto the USB drive to overwrite it, 
 plug the USB drive back into the Raspberry Pi and start it back up.
 
 
-### Autostart
+### Client Software Autostart
 These instructions assume that the username of the default user on the Raspberry Pi has
 been changed from `pi` to `pac`.
 To automatically run the prototype when the Raspberry Pi starts up, install the
@@ -103,7 +106,7 @@ journalctl -u mqtt_illumination
 sudo systemctl stop mqtt_illumination
 ```
 
-### MQTT Server Setup
+## MQTT Broker Server Setup
 
 ### Physical Security
 To prevent the Raspberry Pi's SD card from being removed so that an attacker can read the keyfile

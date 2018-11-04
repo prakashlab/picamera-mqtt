@@ -2,18 +2,21 @@
 import argparse
 import os
 
-from intervention_system import repo_path
+from intervention_system.deploy import settings_key_path as default_keyfile_path
+from intervention_system.deploy import client_config_plain_path as default_input_path
+from intervention_system.deploy import client_config_cipher_path as default_output_path
 from intervention_system.util import config
-
-project_path = os.path.dirname(repo_path)
-default_keyfile_path = os.path.join(project_path, 'settings.key')
-default_input_path = '/media/usb0/settings.json'
-default_output_path = '/media/usb0/settings_encrypted.json'
 
 
 def main(input_path, key_path, output_path):
     config_plain = config.config_load(input_path, None)
-    config.config_dump(config_plain, output_path, key_path)
+    try:
+        config.config_dump(config_plain, output_path, key_path)
+    except PermissionError:
+        raise PermissionError(
+            'Could not write to {}. Make sure the program '
+            'is run with privileged permissions!'.format(output_path)
+        )
 
 
 if __name__ == '__main__':

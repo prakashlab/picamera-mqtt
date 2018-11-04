@@ -2,11 +2,8 @@
 import argparse
 import os
 
-from intervention_system import repo_path
+from intervention_system.deploy import settings_key_path as default_keyfile_path
 from intervention_system.util import crypto
-
-project_path = os.path.dirname(repo_path)
-default_keyfile_path = os.path.join(project_path, 'settings.key')
 
 
 def main(key_path):

@@ -1,0 +1,20 @@
+{
+  "broker": {
+    "hostname": "localhost",
+    "port": 26076,
+    "username": "detector",
+    "password": "foobar",
+    "use_tls": false,
+    "ca_certs": "/etc/ssl/certs/ca-certificates.crt",
+    "client_id": "",
+    "clean_session": true
+  },
+  "deploy": {
+    "pi_username": "pac",
+    "ping_interval": 2,
+    "ping_timeout": 1
+  },
+  "messaging": {
+    "encrypt_messages": false
+  }
+} 

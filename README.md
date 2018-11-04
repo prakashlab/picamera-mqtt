@@ -152,3 +152,18 @@ card into the Raspberry Pi board or pot it with epoxy.
 
 ### Mounting
 TODO
+
+## System Administration
+
+You can remotely send deployment management commands to the Raspberry Pi client
+by sending messages over the `deployment` topic. The
+`intervention_system/tools/deploy/mqtt_send_deployment` script lets you do this
+from the command-line, as follows:
+```
+cd ~/hand-hygiene/intervention
+python3 -m intervention_system.tools.deploy.mqtt_send_deployment shutdown # shut down the Raspberry Pi
+python3 -m intervention_system.tools.deploy.mqtt_send_deployment reboot # reboot the Raspberry Pi
+python3 -m intervention_system.tools.deploy.mqtt_send_deployment stop # stop the illumination client
+python3 -m intervention_system.tools.deploy.mqtt_send_deployment restart # restart the illumination client
+python3 -m intervention_system.tools.deploy.mqtt_send_deployment "git pull" # update the repo and restart the illumination client
+```

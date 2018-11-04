@@ -30,37 +30,39 @@ Then confirm that everything works correctly by running the `sticktest.py` scrip
 root privileges, as follows:
 ```
 cd ~/hand-hygiene/intervention
-sudo python3 intervention_client/sticktest.py -c
+sudo python3 -m intervention_system.tests.illumination.stick_patterns
 ```
-Note that the `-c` command-line flag instructs the script to turn off all LEDs when
-the script quits.
 
 ## Deployment Setup
 
 ### Config File
 You will need to have a USB drive handy. It will need to have a `settings.json` file
-in the root of the drive. For an example, refer to the `config/settings.json` file.
+in the root of the drive. For an example file, refer to `deploy/config/settings.json`.
+
 You will need to set up USB automount so that the Raspberry Pi can read the
 config file from the USB drive:
 ```
 cd ~/hand-hygiene/intervention
 sudo apt-get install usbmount
-sudo cp -r systemd/systemd-udevd.service.d /etc/systemd/system/
+sudo cp -r deploy/systemd/systemd-udevd.service.d /etc/systemd/system/
 ```
 You may need to restart the Raspberry Pi after setting up USB automount.
 You should confirm that you can see a file at `/media/usb0/settings.json`.
-Next, you will need to generate a keyfile at `~/hand-hygiene/settings.key`
-to encrypt the config file, and then encrypt the config file:
+
+Next, you will need to generate a keyfile at `~/hand-hygiene/settings.key`,
+for file encryption:
 ```
 cd ~/hand-hygiene/intervention
-python3 -m intervention_client.tools.generate_key
+python3 -m intervention_system.tools.config.generate_key
 ```
-Next, you will need to encrypt the settings file using your key to generate a
+
+Next, you will need to encrypt the `settings.json` file using your key, to generate a
 file at `/media/usb0/settings_encrypted.json`:
 ```
 cd ~/hand-hygiene/intervention
-sudo python3 -m intervention_client.tools.encrypt_config
+sudo python3 -m intervention_system.tools.config.encrypt_config
 ```
+
 Finally, you should copy the `settings.key` keyfile and the unencrypted `settings.json`
 file to somewhere for safe-keeping. You may want to copy the `settings.key` file onto the
 USB drive, remove the USB drive from the Raspberry Pi, copy the `settings.key` and
@@ -70,14 +72,15 @@ attacker can read the settings by stealing the USB drive.
 
 If you ever need to update the config settings of the network connection, you can
 edit your `settings.json` file on a separate computer (e.g. another Raspberry Pi), then 
-encrypt it to a `settings_encoded.json` file at a path you set:
+encrypt it to a `settings_encrypted.json` file at a path you set:
 ```
 cd ~/hand-hygiene/intervention
 vim /path/to/settings.json
-python3 -m intervention_client.tools.encrypt_config --input /path/to/settings.json --key /path/to/settings.key --output /path/to/settings_encoded.json
+python3 -m intervention_system.tools.encrypt_config --input /path/to/settings.json --key /path/to/settings.key --output /path/to/settings_encrypted.json
 ```
+
 Then you can shut down the Raspberry Pi running the client, remove the USB drive,
-copy the new `settings_encoded.json` file onto the USB drive to overwrite it, and
+copy the new `settings_encrypted.json` file onto the USB drive to overwrite it, and
 plug the USB drive back into the Raspberry Pi and start it back up.
 
 
@@ -88,7 +91,7 @@ To automatically run the prototype when the Raspberry Pi starts up, install the
 `mqtt_illumination.service` systemd unit:
 ```
 cd ~/hand-hygiene/intervention
-sudo cp systemd/mqtt_illumination.service /etc/systemd/system/mqtt_illumination.service
+sudo cp deploy/systemd/mqtt_illumination.service /etc/systemd/system/mqtt_illumination.service
 sudo systemctl enable mqtt_illumination
 ```
 You can manually start the service with systemd, view the status of the service with systemd,

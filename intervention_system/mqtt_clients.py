@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 message_string_encoding = 'utf-8'
 
+
 class AsyncioHelper(object):
     """A helper to adapt the MQTT client to asyncio event loop."""
 
@@ -197,4 +198,5 @@ class AsyncioClient(object):
             self.ping_mid = None
 
     def publish_message(self, topic, payload, qos):
+        """Publish a message."""
         return self.client.publish(topic, payload, qos)

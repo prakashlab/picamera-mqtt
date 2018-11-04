@@ -39,6 +39,7 @@ async def reboot():
     )
     raise KeyboardInterrupt
 
+
 async def shutdown():
     """Trigger a system shutdown."""
     logger.info('Shutting down system...')
@@ -48,6 +49,7 @@ async def shutdown():
     )
     raise KeyboardInterrupt
 
+
 async def restart():
     """Trigger a service restart."""
     logger.info('Restarting service...')
@@ -55,6 +57,7 @@ async def restart():
         'systemctl', 'restart', service_name,
         stdout=asyncio.subprocess.PIPE
     )
+
 
 async def git_pull(pi_username, restart_afterwards=False):
     """Trigger a repository update."""

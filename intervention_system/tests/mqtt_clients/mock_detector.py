@@ -1,12 +1,15 @@
 """Test script to send control messages to a MQTT topic."""
 
+import argparse
 import asyncio
 import logging
 import logging.config
 import os
 import random
 
-from intervention_system.deploy import client_config_sample_cloudmqtt_path
+from intervention_system.deploy import (
+    client_config_sample_cloudmqtt_name, client_configs_sample_path
+)
 from intervention_system.mqtt_clients import AsyncioClient
 from intervention_system.protocol import illumination_topic
 from intervention_system.util import config
@@ -55,10 +58,20 @@ class MockDetector(AsyncioClient):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Receive illumination system messages.')
+    parser.add_argument(
+        '--config', '-c', type=str, default=client_config_sample_cloudmqtt_name,
+        help=(
+            'Name of client settings file in {}. Default: {}'
+            .format(client_configs_sample_path, client_config_sample_cloudmqtt_name)
+        )
+    )
+    args = parser.parse_args()
+    config_name = args.config
     register_keyboard_interrupt_signals()
 
     # Load configuration
-    config_path = client_config_sample_cloudmqtt_path
+    config_path = os.path.join(client_configs_sample_path, config_name)
     configuration = config.config_load(config_path, keyfile_path=None)
 
     logger.info('Starting client...')

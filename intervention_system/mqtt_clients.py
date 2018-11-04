@@ -153,6 +153,9 @@ class AsyncioClient(object):
                     .format(self.hostname)
                 )
                 await self.attempt_reconnect()
+            except ConnectionRefusedError:
+                logger.error('Broker server not available, trying again in 1 sec...')
+                await asyncio.sleep(1)
 
         logger.info('Connected to {}:{}.'.format(self.hostname, self.port))
 

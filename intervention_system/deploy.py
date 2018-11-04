@@ -37,6 +37,7 @@ async def reboot():
         'systemctl', 'reboot',
         stdout=asyncio.subprocess.PIPE
     )
+    raise KeyboardInterrupt
 
 async def shutdown():
     """Trigger a system shutdown."""
@@ -45,6 +46,7 @@ async def shutdown():
         'systemctl', 'poweroff',
         stdout=asyncio.subprocess.PIPE
     )
+    raise KeyboardInterrupt
 
 async def restart():
     """Trigger a service restart."""

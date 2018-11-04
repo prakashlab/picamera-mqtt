@@ -105,7 +105,7 @@ class Illuminator(AsyncioClient):
         self.client.message_callback_add(deployment_topic, self.on_deployment_topic)
         self.client.message_callback_add(illumination_topic, self.on_illumination_topic)
 
-    async def clear(self, params):
+    async def clear(self, params={}):
         """Clear the lights."""
         try:
             self.lights.clear()

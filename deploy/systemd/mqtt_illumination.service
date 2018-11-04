@@ -5,6 +5,7 @@ After=network-online.target
 [Service]
 ExecStart=/home/pac/hand-hygiene/intervention/deploy/mqtt_illumination.sh
 KillSignal=SIGINT
+TimeoutStopSec=5
 Restart=always
 Type=forking
 PIDFile=/var/run/mqtt_illumination.pid

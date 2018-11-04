@@ -7,6 +7,7 @@ import os
 
 from intervention_system.deploy import client_config_sample_cloudmqtt_path
 from intervention_system.illumination.mqtt_client import Illuminator, topics
+from intervention_system.mqtt_clients import message_string_encoding
 from intervention_system.protocol import illumination_topic, deployment_topic
 from intervention_system.util import config
 from intervention_system.util.async import (
@@ -26,18 +27,20 @@ class MockIlluminator(Illuminator):
         """Initialize illumination support."""
         pass
 
-    async def restart(self):
-        """Trigger a system restart."""
-        logger.info('Mock restarting (nop)...')
-
-    async def shutdown(self):
-        """Trigger a system shutdown."""
-        logger.info('Mock shutting down (disconnecting)...')
-        raise KeyboardInterrupt
-
-    async def git_pull(self):
-        """Trigger a repository update and subsequent system restart."""
-        logger.info('Mock updating local repo (nop)...')
+    def on_deployment_topic(self, client, userdata, msg):
+        """Handle any device deployment messages."""
+        command = msg.payload.decode(message_string_encoding)
+        if command == 'reboot':
+            logger.info('Mock rebooting (nop)...')
+        elif command == 'shutdown':
+            logger.info('Mock shutting down (nop)...')
+        elif command == 'restart':
+            logger.info('Mock restarting (nop)...')
+        elif command == 'git pull':
+            logger.info('Mock updating local repo (nop)...')
+        elif command == 'stop':
+            logger.info('Stopping...')
+            raise KeyboardInterrupt
 
     def set_illumination(self, illumination_params):
         """Set the lights to some illumination."""

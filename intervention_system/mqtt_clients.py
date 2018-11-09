@@ -154,9 +154,15 @@ class AsyncioClient(object):
                     .format(self.hostname)
                 )
                 await self.attempt_reconnect()
-            except ConnectionRefusedError:
+            except (ConnectionRefusedError, TimeoutError):
                 logger.error(
                     'Broker server not available, trying again in {} sec...'
+                    .format(self.ping_interval)
+                )
+                await asyncio.sleep(self.ping_interval)
+            except OSError:
+                logger.error(
+                    'Internet connection not available, trying again in {} sec...'
                     .format(self.ping_interval)
                 )
                 await asyncio.sleep(self.ping_interval)

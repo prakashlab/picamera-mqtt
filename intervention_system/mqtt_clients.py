@@ -153,7 +153,6 @@ class AsyncioClient(object):
                     'DNS lookup of hostname {} failed, trying again...'
                     .format(self.hostname)
                 )
-                await self.attempt_reconnect()
             except (ConnectionRefusedError, TimeoutError):
                 logger.error(
                     'Broker server not available, trying again in {} sec...'
@@ -162,10 +161,10 @@ class AsyncioClient(object):
                 await asyncio.sleep(self.ping_interval)
             except OSError:
                 logger.error(
-                    'Internet connection not available, trying again in {} sec...'
+                    'Internet connection not available, trying again...'
                     .format(self.ping_interval)
                 )
-                await asyncio.sleep(self.ping_interval)
+                await self.attempt_reconnect()
 
         logger.info('Connected to {}:{}.'.format(self.hostname, self.port))
 

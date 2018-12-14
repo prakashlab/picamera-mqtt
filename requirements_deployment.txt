@@ -1,3 +1,1 @@
-rpi_ws281x
 paho-mqtt
-pynacl

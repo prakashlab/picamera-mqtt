@@ -1,14 +1,13 @@
-"""Test script to control illumination from a MQTT topic."""
+"""Test script to control imaging from a MQTT topic."""
 
 import asyncio
 import json
 import logging
 import logging.config
-import os
 
 from intervention_system import deploy
 from intervention_system.mqtt_clients import AsyncioClient, message_string_encoding
-from intervention_system.protocol import illumination_topic, deployment_topic
+from intervention_system.protocol import control_topic, deployment_topic, imaging_topic
 from intervention_system.util import config
 from intervention_system.util.async import (
     register_keyboard_interrupt_signals, run_function
@@ -19,24 +18,22 @@ from intervention_system.util.logging import logging_config
 logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
 
-# Configure configuration file loading
-use_encrypted_settings = False
-
 # Configure messaging
 topics = {
-    illumination_topic: 2,
+    control_topic: 2,
+    imaging_topic: 2,
     deployment_topic: 2
 }
 
 
-class Illuminator(AsyncioClient):
-    """Sets NeoPixel illumination based on messages from the broker."""
+class Imager(AsyncioClient):
+    """Acquires images based on messages from the broker."""
 
     def __init__(self, *args, pi_username='pi', **kwargs):
         """Initialize client state."""
         super().__init__(*args, **kwargs)
 
-        self.init_illumination()
+        self.init_imaging()
         self.mode_handlers = {
             'clear': self.clear,
             'breathe': self.breathe,
@@ -44,23 +41,22 @@ class Illuminator(AsyncioClient):
             'theater': self.theater,
             'rainbow': self.rainbow
         }
-        self.illumination_task = None
-        self.illumination_params = None
+        self.imaging_task = None
+        self.imaging_params = None
 
         self.pi_username = pi_username
 
-    def init_illumination(self):
-        """Initialize illumination support."""
+    def init_imaging(self):
+        """Initialize imaging support."""
         # Only import if needed
-        from intervention_system.illumination import illumination as il
+        from intervention_system.imaging import imaging as im
 
-        self.lights = il.Illumination()
+        self.camera = im.Camera()
 
     def on_connect(self, client, userdata, flags, rc):
         """When the client connects, handle it."""
-        self.set_illumination({'mode': 'clear'})
         super().on_connect(client, userdata, flags, rc)
-        self.client.publish('connect', 'illumination client', qos=2)
+        self.client.publish('connect', 'imaging client', qos=2)
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
@@ -103,7 +99,7 @@ class Illuminator(AsyncioClient):
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
         self.client.message_callback_add(deployment_topic, self.on_deployment_topic)
-        self.client.message_callback_add(illumination_topic, self.on_illumination_topic)
+        self.client.message_callback_add(imaging_topic, self.on_imaging_topic)
 
     async def clear(self, params={}):
         """Clear the lights."""
@@ -217,13 +213,8 @@ if __name__ == '__main__':
     register_keyboard_interrupt_signals()
 
     # Load configuration
-    if use_encrypted_settings:
-        config_path = deploy.client_config_cipher_path
-        keyfile_path = deploy.settings_key_path
-    else:
-        config_path = deploy.client_config_plain_path
-        keyfile_path = None
-    configuration = config.config_load(config_path, keyfile_path=keyfile_path)
+    config_path = deploy.client_config_plain_path
+    configuration = config.config_load(config_path, keyfile_path=None)
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()

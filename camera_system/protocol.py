@@ -1,4 +1,5 @@
-"""Shared parameters for illumination control messaging protocol over MQTT."""
+"""Shared parameters for imaging control messaging protocol over MQTT."""
 
-illumination_topic = 'illumination'
+control_topic = 'control'
+imaging_topic = 'imaging'
 deployment_topic = 'deployment'

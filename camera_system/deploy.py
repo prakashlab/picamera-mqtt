@@ -8,26 +8,20 @@ from intervention_system import deploy_path
 
 logger = logging.getLogger(__name__)
 
-keys_path = deploy_path
-settings_key_path = os.path.join(keys_path, 'settings.key')
-# USB configs
-client_configs_path = '/media/usb0/'
+# Configs
+client_configs_path = deploy_path
 client_config_plain_name = 'settings.json'
-client_config_cipher_name = 'settings_encrypted.json'
 client_config_plain_path = os.path.join(
     client_configs_path, client_config_plain_name
 )
 # Sample configs
-client_config_cipher_path = os.path.join(
-    client_configs_path, client_config_cipher_name
-)
 client_configs_sample_path = os.path.join(deploy_path, 'config')
 client_config_sample_cloudmqtt_name = 'settings_cloudmqtt.json'
 client_config_sample_cloudmqtt_path = os.path.join(
     client_configs_sample_path, client_config_sample_cloudmqtt_name
 )
 
-service_name = 'mqtt_illumination'
+service_name = 'mqtt_imaging'
 
 
 async def daemon_reload():

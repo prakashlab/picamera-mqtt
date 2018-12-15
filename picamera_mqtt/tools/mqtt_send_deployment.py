@@ -82,6 +82,7 @@ if __name__ == '__main__':
     # Load configuration
     config_path = os.path.join(client_configs_sample_path, config_name)
     configuration = config.config_load(config_path)
+    configuration['host']['client_name'] = 'mqtt_send_deployment'
     configuration['host']['target_names'] = [args.target_name]
 
     logger.info('Starting client...')

@@ -78,14 +78,9 @@ class Host(AsyncioClient):
             'datetime': receive_datetime
         }
 
-        capture_filename = self.build_capture_filename(capture)
-        image_filename = '{}.{}'.format(capture_filename, capture['format'])
-
-        image_base64 = capture.pop('image', None)
-        files.b64_string_bytes_save(image_base64, image_filename)
-
-        capture['image'] = image_filename
-        files.json_dump(capture, '{}.json'.format(capture_filename))
+        self.save_captured_image(capture)
+        capture.pop('image', None)
+        self.save_captured_metadata(capture)
         capture['camera_params'] = '...'
         logger.info('Received image on topic {}: {}'.format(
             msg.topic, json.dumps(capture)
@@ -97,6 +92,18 @@ class Host(AsyncioClient):
             capture['metadata']['image_id'],
             capture['metadata']['capture_time']['datetime']
         )
+
+    def save_captured_image(self, capture):
+        capture_filename = self.build_capture_filename(capture)
+        image_filename = '{}.{}'.format(capture_filename, capture['format'])
+        image_base64 = capture['image']
+        files.b64_string_bytes_save(image_base64, image_filename)
+
+    def save_captured_metadata(self, capture):
+        capture_filename = self.build_capture_filename(capture)
+        image_filename = '{}.{}'.format(capture_filename, capture['format'])
+        capture['image'] = image_filename
+        files.json_dump(capture, '{}.json'.format(capture_filename))
 
     def request_image(
         self, target_name, format='jpeg',

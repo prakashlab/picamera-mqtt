@@ -88,9 +88,9 @@ by sending messages over the `deployment` topic. The
 from the command-line, as follows:
 ```
 cd ~/hand-hygiene/intervention
-python3 -m intervention_system.tools.deploy.mqtt_send_deployment shutdown --target_name camera_1 # shut down the Raspberry Pi running camera 1
-python3 -m intervention_system.tools.deploy.mqtt_send_deployment reboot --target_name camera_1 # reboot the Raspberry Pi running camera 1
-python3 -m intervention_system.tools.deploy.mqtt_send_deployment stop --target_name camera_1 # stop the illumination client running camera 1
-python3 -m intervention_system.tools.deploy.mqtt_send_deployment restart --target_name camera_1 # restart the illumination client running camera 1
-python3 -m intervention_system.tools.deploy.mqtt_send_deployment "git pull" --target_name camera_1 # update the repo and restart the illumination client running camera 1
+python3 -m intervention_system.tools.mqtt_send_deployment shutdown --target_name camera_1 # shut down the Raspberry Pi running camera 1
+python3 -m intervention_system.tools.mqtt_send_deployment reboot --target_name camera_1 # reboot the Raspberry Pi running camera 1
+python3 -m intervention_system.tools.mqtt_send_deployment stop --target_name camera_1 # stop the illumination client running camera 1
+python3 -m intervention_system.tools.mqtt_send_deployment restart --target_name camera_1 # restart the illumination client running camera 1
+python3 -m intervention_system.tools.mqtt_send_deployment "git pull" --target_name camera_1 # update the repo and restart the illumination client running camera 1
 ```

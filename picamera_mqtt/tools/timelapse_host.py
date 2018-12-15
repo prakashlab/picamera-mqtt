@@ -1,4 +1,4 @@
-"""Test script to send control messages to a MQTT topic."""
+"""Test script to obtain timelapses with remote cameras."""
 
 import argparse
 import asyncio
@@ -22,33 +22,25 @@ logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
 
 
-class MockHost(Host):
-    """Sends messages to broker based on operator actions."""
+class TimelapseHost(Host):
+    """Acquires remote images for a timelapse."""
 
-    def __init__(self, *args, acquisition_interval=5, **kwargs):
+    def __init__(self, *args, acquisition_interval=15, **kwargs):
         super().__init__(*args, **kwargs)
         self.acquisition_interval = acquisition_interval
-
-    def save_captured_image(self, capture):
-        logger.info('Mock saving acquired image {}.'.format(
-            self.build_capture_filename(capture)
-        ))
-
-    def save_captured_metadata(self, capture):
-        pass
 
     async def run_iteration(self):
         """Run one iteration of the run loop."""
         for target_name in self.target_names:
             self.request_image(target_name, extra_metadata={
-                'host': 'mock_host'
+                'host': 'timelapse_host'
             })
         await asyncio.sleep(self.acquisition_interval)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Send image acquisition messages and save acquired images.'
+        description='Acquire timelapse series.'
     )
     parser.add_argument(
         '--config', '-c', type=str,
@@ -58,8 +50,8 @@ if __name__ == '__main__':
         ))
     )
     parser.add_argument(
-        '--interval', '-i', type=int, default=8,
-        help='Image acquisition interval in seconds. Default: 8'
+        '--interval', '-i', type=int, default=15,
+        help='Image acquisition interval in seconds. Default: 15'
     )
     args = parser.parse_args()
     config_name = args.config
@@ -71,7 +63,7 @@ if __name__ == '__main__':
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()
-    mqttc = MockHost(
+    mqttc = TimelapseHost(
         loop, **configuration['broker'], **configuration['host'],
         topics=topics, acquisition_interval=args.interval
     )

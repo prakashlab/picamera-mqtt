@@ -109,6 +109,20 @@ class Camera(object):
         }
 
 
+class MockCamera(object):
+    def capture_pil(self, format='jpeg', **format_args):
+        import numpy as np
+        image_array = np.random.randint(
+            0, 256, dtype=np.uint8, size=(1080, 1920, 3)
+        )
+        return Image.fromarray(image_array)
+
+    def get_params(self):
+        return {
+            'mock': 'white noise'
+        }
+
+
 def buffer_to_base64(image_buffer, encoding='utf-8'):
     return base64.b64encode(image_buffer.getvalue()).decode(encoding)
 

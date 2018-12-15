@@ -3,12 +3,12 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-ExecStart=/home/pac/hand-hygiene/intervention/deploy/mqtt_illumination.sh
+ExecStart=/home/pi/Desktop/picamera-mqtt/deploy/mqtt_imaging.sh
 KillSignal=SIGINT
 TimeoutStopSec=5
 Restart=always
 Type=forking
-PIDFile=/var/run/mqtt_illumination.pid
+PIDFile=/var/run/mqtt_imaging.pid
 
 [Install]
 WantedBy=default.target

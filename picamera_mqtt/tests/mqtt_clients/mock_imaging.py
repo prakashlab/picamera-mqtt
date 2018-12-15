@@ -6,28 +6,29 @@ import logging
 import logging.config
 import os
 
-from intervention_system.deploy import (
-    client_config_sample_cloudmqtt_name, client_configs_sample_path
+from picamera_mqtt.deploy import (
+    client_config_sample_localhost_name, client_configs_sample_path
 )
-from intervention_system.illumination.mqtt_client import Illuminator, topics
-from intervention_system.mqtt_clients import message_string_encoding
-from intervention_system.util import config
-from intervention_system.util.async import (
+from picamera_mqtt.imaging import imaging
+from picamera_mqtt.imaging.mqtt_client_camera import Imager, topics
+from picamera_mqtt.mqtt_clients import message_string_encoding
+from picamera_mqtt.util import config
+from picamera_mqtt.util.async import (
     register_keyboard_interrupt_signals, run_function
 )
-from intervention_system.util.logging import logging_config
+from picamera_mqtt.util.logging import logging_config
 
 # Set up logging
 logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
 
 
-class MockIlluminator(Illuminator):
-    """Sets NeoPixel illumination based on messages from the broker."""
+class MockImager(Imager):
+    """Generates random images based on messages from the broker."""
 
-    def init_illumination(self):
-        """Initialize illumination support."""
-        pass
+    def init_imaging(self):
+        """Initialize imaging support."""
+        self.camera = imaging.MockCamera()
 
     def on_deployment_topic(self, client, userdata, msg):
         """Handle any device deployment messages."""
@@ -44,10 +45,6 @@ class MockIlluminator(Illuminator):
             logger.info('Stopping...')
             raise KeyboardInterrupt
 
-    def set_illumination(self, illumination_params):
-        """Set the lights to some illumination."""
-        logger.info('Mock setting lights to: {}'.format(illumination_params))
-
     async def attempt_reconnect(self):
         """Prepare the system for a reconnection attempt."""
         logger.info('Mock reconnecting (nop)...')
@@ -55,12 +52,12 @@ class MockIlluminator(Illuminator):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Receive illumination system messages.')
+    parser = argparse.ArgumentParser(description='Generate random images on request.')
     parser.add_argument(
-        '--config', '-c', type=str, default=client_config_sample_cloudmqtt_name,
+        '--config', '-c', type=str, default=client_config_sample_localhost_name,
         help=(
             'Name of client settings file in {}. Default: {}'
-            .format(client_configs_sample_path, client_config_sample_cloudmqtt_name)
+            .format(client_configs_sample_path, client_config_sample_localhost_name)
         )
     )
     args = parser.parse_args()
@@ -70,10 +67,13 @@ if __name__ == '__main__':
 
     # Load configuration
     config_path = os.path.join(client_configs_sample_path, config_name)
-    configuration = config.config_load(config_path, keyfile_path=None)
+    configuration = config.config_load(config_path)
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()
-    mqttc = MockIlluminator(loop, **configuration['broker'], topics=topics)
+    mqttc = MockImager(
+        loop, **configuration['broker'], **configuration['deploy'],
+        topics=topics
+    )
     run_function(mqttc.run)
     logger.info('Finished!')

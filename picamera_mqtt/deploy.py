@@ -4,21 +4,25 @@ import asyncio
 import logging
 import os
 
-from intervention_system import deploy_path
+from picamera_mqtt import deploy_path
 
 logger = logging.getLogger(__name__)
 
 # Configs
-client_configs_path = deploy_path
+client_configs_path = os.path.join(deploy_path, 'config')
 client_config_plain_name = 'settings.json'
 client_config_plain_path = os.path.join(
     client_configs_path, client_config_plain_name
 )
 # Sample configs
-client_configs_sample_path = os.path.join(deploy_path, 'config')
+client_configs_sample_path = client_configs_path
 client_config_sample_cloudmqtt_name = 'settings_cloudmqtt.json'
 client_config_sample_cloudmqtt_path = os.path.join(
     client_configs_sample_path, client_config_sample_cloudmqtt_name
+)
+client_config_sample_localhost_name = 'settings_localhost.json'
+client_config_sample_localhost_path = os.path.join(
+    client_configs_sample_path, client_config_sample_localhost_name
 )
 
 service_name = 'mqtt_imaging'

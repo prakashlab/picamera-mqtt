@@ -4,4 +4,4 @@ CONFNAME="broker.conf"
 
 cd "${DIRNAME}"
 cd ..
-pipenv run python3 -m intervention_system.tests.mqtt_clients.mock_detector --config settings_localhost_detector.json
+python3 -m picamera_mqtt.tests.mqtt_clients.mock_host --config settings_localhost.json

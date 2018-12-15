@@ -1,5 +1,5 @@
 """Support for loading json configurations from a drive."""
-from intervention_system.util import files
+from picamera_mqtt.util import files
 
 def config_dump(config_obj, config_path):
     """Dump and encrypt a json config to a file."""

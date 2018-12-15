@@ -6,6 +6,8 @@ import ssl
 
 import paho.mqtt.client as mqtt
 
+from picamera_mqtt.protocol import connect_topic, ping_topic
+
 logger = logging.getLogger(__name__)
 
 message_string_encoding = 'utf-8'
@@ -50,14 +52,18 @@ class AsyncioClient(object):
     """Async MQTT client."""
 
     def __init__(
-        self, loop, hostname='localhost', port=1883, username=None, password=None,
+        self, loop,
+        hostname='localhost', port=1883,
+        username=None, password=None, client_id='',
         use_tls=False, ca_certs=None, tls_version=ssl.PROTOCOL_TLSv1_2,
-        client_id='', topics={},
+        topics={}, client_name='asyncio client', target_name='asyncio client',
         clean_session=True, ping_interval=2, ping_timeout=1
     ):
         """Initialize client state."""
         self.loop = loop
         self.client_id = client_id
+        self.client_name = client_name
+        self.target_name = target_name
         self.clean_session = clean_session
         self.client = mqtt.Client(
             client_id=client_id, clean_session=clean_session
@@ -77,11 +83,14 @@ class AsyncioClient(object):
         self.port = port
         if use_tls and (ca_certs is not None):
             self.client.tls_set(
-                ca_certs=ca_certs, cert_reqs=ssl.CERT_REQUIRED, tls_version=tls_version
+                ca_certs=ca_certs, cert_reqs=ssl.CERT_REQUIRED,
+                tls_version=tls_version
             )
 
         if topics:
-            self.topics = {topic: qos for (topic, qos) in topics.items()}
+            self.topics = {
+                topic: params for (topic, params) in topics.items()
+            }
         else:
             self.topics = {}
 
@@ -96,14 +105,24 @@ class AsyncioClient(object):
             logger.error('Bad connection, returned code: {}'.format(rc))
             return
         logger.info('Subscribing to topics...')
-        for (topic, qos) in self.topics.items():
-            client.subscribe(topic)
+        for (topic, params) in self.topics.items():
+            if params['subscribe']:
+                client.subscribe(self.get_topic_path(topic), qos=params['qos'])
         self.add_topic_handlers()
         logger.info('Subscribed to topics!')
+        self.publish_message(
+            connect_topic, self.client_name, local_namespace=False
+        )
 
     def on_message(self, client, userdata, msg):
         """When the client receives a message, handle it."""
-        logger.info('Got message on topic {}: {}'.format(msg.topic, msg.payload))
+        if (
+            msg.topic in self.topics
+            and self.topics[msg.topic].get('log', False)
+        ):
+            logger.info(
+                'Got message on topic {}: {}'.format(msg.topic, msg.payload)
+            )
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
@@ -127,7 +146,9 @@ class AsyncioClient(object):
             self.client.reconnect()
         else:
             self.client.connect(self.hostname, self.port)
-        self.client.socket().setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2048)
+        self.client.socket().setsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF, 2048
+        )
 
     def on_run(self):
         """When the client starts the run loop, handle it."""
@@ -195,13 +216,28 @@ class AsyncioClient(object):
     async def run_iteration(self):
         """Run one iteration of the run loop."""
         await asyncio.sleep(self.ping_interval - self.ping_timeout)
-        message = self.publish_message('ping', 'illumination client', 1)
+        message = self.publish_message(ping_topic, self.client_name, qos=1)
         self.ping_mid = message.mid
         await asyncio.sleep(self.ping_timeout)
         if self.ping_mid is not None:
             self.on_disconnect(self.client, None, 1)
             self.ping_mid = None
 
-    def publish_message(self, topic, payload, qos):
+    def get_target_name(self, topic):
+        return self.target_name
+
+    def get_topic_path(self, topic, local_namespace=None):
+        target_name = self.get_target_name(topic)
+        if local_namespace == True:
+            return '{}/{}'.format(target_name, topic)
+        elif local_namespace is None:
+            if topic in self.topics and self.topics[topic]['local_namespace']:
+                return '{}/{}'.format(target_name, topic)
+            else:
+                return topic
+        else:
+            return topic
+
+    def publish_message(self, topic, payload, qos=2, local_namespace=True):
         """Publish a message."""
-        return self.client.publish(topic, payload, qos)
+        return self.client.publish(self.get_topic_path(topic), payload, qos)

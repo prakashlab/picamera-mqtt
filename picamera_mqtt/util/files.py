@@ -51,3 +51,8 @@ def bytes_b64_load(path, char_encoding='utf-8'):
     b64_string = string_load(path)
     b64_data = bytes(b64_string, char_encoding)
     return base64.b64decode(b64_data)
+
+def b64_string_bytes_save(b64_string, path, char_encoding='utf-8'):
+    b64_data = bytes(b64_string, char_encoding)
+    bytes_data = base64.b64decode(b64_data)
+    bytes_save(bytes_data, path)

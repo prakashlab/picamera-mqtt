@@ -6,23 +6,30 @@ import logging
 import logging.config
 import os
 
-from intervention_system.deploy import (
-    client_config_sample_cloudmqtt_name, client_configs_sample_path
+from picamera_mqtt.deploy import (
+    client_config_sample_localhost_name, client_configs_sample_path
 )
-from intervention_system.mqtt_clients import AsyncioClient
-from intervention_system.protocol import deployment_topic
-from intervention_system.util import config
-from intervention_system.util.async import (
+from picamera_mqtt.mqtt_clients import AsyncioClient
+from picamera_mqtt.protocol import deployment_topic
+from picamera_mqtt.util import config
+from picamera_mqtt.util.async import (
     register_keyboard_interrupt_signals, run_function
 )
-from intervention_system.util.logging import logging_config
-
-# Program parameters
-publish_qos = 2
+from picamera_mqtt.util.logging import logging_config
 
 # Set up logging
 logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
+
+# Configure messaging
+topics = {
+    deployment_topic: {
+        'qos': 2,
+        'local_namespace': True,
+        'subscribe': False,
+        'log': False
+    }
+}
 
 
 class Publisher(AsyncioClient):
@@ -44,7 +51,7 @@ class Publisher(AsyncioClient):
         """Run one iteration of the run loop."""
         if self.message_mid is None:
             logger.info('Publishing message: {}'.format(self.message))
-            message = self.publish_message(deployment_topic, self.message, publish_qos)
+            message = self.publish_message(deployment_topic, self.message)
             self.message_mid = message.mid
         else:
             await asyncio.sleep(0.5)
@@ -54,11 +61,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Send a deployment message.')
     parser.add_argument('message', type=str, help='Message to send on the deployment topic.')
     parser.add_argument(
-        '--config', '-c', type=str, default=client_config_sample_cloudmqtt_name,
+        '--config', '-c', type=str, default=client_config_sample_localhost_name,
         help=(
             'Name of client settings file in {}. Default: {}'
-            .format(client_configs_sample_path, client_config_sample_cloudmqtt_name)
+            .format(client_configs_sample_path, client_config_sample_localhost_name)
         )
+    )
+    parser.add_argument(
+        '--target_name', '-t', type=str, default='camera_1',
+        help=('Name of camera client to send a message to. Default: camera_1')
     )
     args = parser.parse_args()
     config_name = args.config
@@ -67,11 +78,13 @@ if __name__ == '__main__':
 
     # Load configuration
     config_path = os.path.join(client_configs_sample_path, config_name)
-    configuration = config.config_load(config_path, keyfile_path=None)
+    configuration = config.config_load(config_path)
+    configuration['host']['target_name'] = args.target_name
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()
     mqttc = Publisher(
-        loop, message, **configuration['broker']
+        loop, message, **configuration['broker'], **configuration['host'],
+        topics=topics
     )
     run_function(mqttc.run)

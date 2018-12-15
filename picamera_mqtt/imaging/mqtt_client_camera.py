@@ -114,21 +114,19 @@ class Imager(AsyncioClient):
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
-        self.client.message_callback_add(
-            self.get_topic_path(deployment_topic), self.on_deployment_topic
-        )
-        self.client.message_callback_add(
-            self.get_topic_path(control_topic), self.on_control_topic
-        )
+        for topic_path in self.get_topic_paths(deployment_topic):
+            self.client.message_callback_add(
+                topic_path, self.on_deployment_topic
+            )
+        for topic_path in self.get_topic_paths(control_topic):
+            self.client.message_callback_add(
+                topic_path, self.on_control_topic
+            )
 
     def acquire_image(self, params):
         """Capture an image and publish it over MQTT."""
-        command_time = params.get('command_time', {
-            'time': time.time()
-        })
-        metadata = params.get('metadata', {
-            'client_name': self.client_name
-        })
+        metadata = params.get('metadata', {})
+        metadata['client_name'] = self.client_name
         format = params.get('format', 'jpeg')
         capture_format_params = params.get('format_params', {
             'quality': 100
@@ -136,6 +134,11 @@ class Imager(AsyncioClient):
         transport_format_params = params.get('format_params', {
             'quality': 80
         })
+        capture_time = {
+            'time': time.time(),
+            'datetime': str(datetime.datetime.now())
+        }
+        metadata['capture_time'] = capture_time
         image_pil = self.camera.capture_pil(
             format=format, **capture_format_params
         )
@@ -144,11 +147,6 @@ class Imager(AsyncioClient):
         )
         output = {
             'metadata': metadata,
-            'command_time': command_time,
-            'capture_time': {
-                'time': time.time(),
-                'datetime': str(datetime.datetime.now())
-            },
             'format': format,
             'capture_format_params': capture_format_params,
             'transport_format_params': transport_format_params,
@@ -156,9 +154,8 @@ class Imager(AsyncioClient):
             'image': image_base64
         }
         output_json = json.dumps(output)
-        logger.info('Publishing image to {}...'.format(
-            self.get_topic_path(imaging_topic)
-        ))
+        for topic_path in self.get_topic_paths(imaging_topic):
+            logger.info('Publishing image to {}...'.format(topic_path))
         self.publish_message(imaging_topic, output_json)
 
     def update_parameters(self, params):

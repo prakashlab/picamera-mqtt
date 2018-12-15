@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 message_string_encoding = 'utf-8'
 
 
+def build_topic_paths(namespaces, topic):
+    return ['{}/{}'.format(namespace, topic) for namespace in namespaces]
+
+
 class AsyncioHelper(object):
     """A helper to adapt the MQTT client to asyncio event loop."""
 
@@ -56,14 +60,15 @@ class AsyncioClient(object):
         hostname='localhost', port=1883,
         username=None, password=None, client_id='',
         use_tls=False, ca_certs=None, tls_version=ssl.PROTOCOL_TLSv1_2,
-        topics={}, client_name='asyncio client', target_name='asyncio client',
+        topics={},
+        client_name='asyncio client', target_names=['asyncio client'],
         clean_session=True, ping_interval=2, ping_timeout=1
     ):
         """Initialize client state."""
         self.loop = loop
         self.client_id = client_id
         self.client_name = client_name
-        self.target_name = target_name
+        self.target_names = target_names
         self.clean_session = clean_session
         self.client = mqtt.Client(
             client_id=client_id, clean_session=clean_session
@@ -104,12 +109,15 @@ class AsyncioClient(object):
         if rc != 0:
             logger.error('Bad connection, returned code: {}'.format(rc))
             return
-        logger.info('Subscribing to topics...')
         for (topic, params) in self.topics.items():
             if params['subscribe']:
-                client.subscribe(self.get_topic_path(topic), qos=params['qos'])
+                for topic_path in self.get_topic_paths(topic):
+                    logger.info(
+                        'Subscribing to {} topic...'.format(topic_path)
+                    )
+                    client.subscribe(topic_path, qos=params['qos'])
         self.add_topic_handlers()
-        logger.info('Subscribed to topics!')
+        logger.info('Finished subscribing to topics!')
         self.publish_message(
             connect_topic, self.client_name, local_namespace=False
         )
@@ -216,28 +224,37 @@ class AsyncioClient(object):
     async def run_iteration(self):
         """Run one iteration of the run loop."""
         await asyncio.sleep(self.ping_interval - self.ping_timeout)
-        message = self.publish_message(ping_topic, self.client_name, qos=1)
+        message = self.publish_message(
+            ping_topic, self.client_name, qos=1,
+            local_namespace=self.client_name
+        )[0]
         self.ping_mid = message.mid
         await asyncio.sleep(self.ping_timeout)
         if self.ping_mid is not None:
             self.on_disconnect(self.client, None, 1)
             self.ping_mid = None
 
-    def get_target_name(self, topic):
-        return self.target_name
+    def get_target_names(self, topic):
+        return self.target_names
 
-    def get_topic_path(self, topic, local_namespace=None):
-        target_name = self.get_target_name(topic)
-        if local_namespace == True:
-            return '{}/{}'.format(target_name, topic)
+    def get_topic_paths(self, topic, local_namespace=None):
+        if local_namespace is False:
+            return [topic]
+        elif local_namespace is True:
+            return build_topic_paths(self.get_target_names(topic), topic)
         elif local_namespace is None:
             if topic in self.topics and self.topics[topic]['local_namespace']:
-                return '{}/{}'.format(target_name, topic)
+                return build_topic_paths(self.get_target_names(topic), topic)
             else:
-                return topic
+                return [topic]
         else:
-            return topic
+            return ['{}/{}'.format(local_namespace, topic)]
 
-    def publish_message(self, topic, payload, qos=2, local_namespace=True):
+    def publish_message(self, topic, payload, qos=2, local_namespace=None):
         """Publish a message."""
-        return self.client.publish(self.get_topic_path(topic), payload, qos)
+        return [
+            self.client.publish(topic_path, payload, qos)
+            for topic_path in self.get_topic_paths(
+                topic, local_namespace=local_namespace
+            )
+        ]

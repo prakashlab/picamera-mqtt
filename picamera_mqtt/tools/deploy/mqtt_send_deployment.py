@@ -51,7 +51,10 @@ class Publisher(AsyncioClient):
         """Run one iteration of the run loop."""
         if self.message_mid is None:
             logger.info('Publishing message: {}'.format(self.message))
-            message = self.publish_message(deployment_topic, self.message)
+            message = self.publish_message(
+                deployment_topic, self.message,
+                local_namespace=self.target_names[0]
+            )[0]
             self.message_mid = message.mid
         else:
             await asyncio.sleep(0.5)
@@ -79,7 +82,7 @@ if __name__ == '__main__':
     # Load configuration
     config_path = os.path.join(client_configs_sample_path, config_name)
     configuration = config.config_load(config_path)
-    configuration['host']['target_name'] = args.target_name
+    configuration['host']['target_names'] = [args.target_name]
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()

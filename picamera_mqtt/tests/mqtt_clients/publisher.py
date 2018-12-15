@@ -4,13 +4,13 @@ import asyncio
 import logging
 import logging.config
 
-from intervention_system.deploy import client_config_sample_cloudmqtt_path
-from intervention_system.mqtt_clients import AsyncioClient, message_string_encoding
-from intervention_system.util import config
-from intervention_system.util.async import (
+from picamera_mqtt.deploy import client_config_sample_cloudmqtt_path
+from picamera_mqtt.mqtt_clients import AsyncioClient, message_string_encoding
+from picamera_mqtt.util import config
+from picamera_mqtt.util.async import (
     register_keyboard_interrupt_signals, run_function
 )
-from intervention_system.util.logging import logging_config
+from picamera_mqtt.util.logging import logging_config
 
 # Program parameters
 topic = 'testing-publish'
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     # Load configuration
     config_path = client_config_sample_cloudmqtt_path
-    configuration = config.config_load(config_path, keyfile_path=None)
+    configuration = config.config_load(config_path)
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()

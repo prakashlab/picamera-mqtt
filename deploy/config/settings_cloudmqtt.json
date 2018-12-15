@@ -14,6 +14,6 @@
     "ping_interval": 2,
     "ping_timeout": 1,
     "client_name": "camera_1"
-    "target_name": "camera_1"
+    "target_names": "camera_1"
   }
 } 

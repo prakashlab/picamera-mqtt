@@ -1,0 +1,19 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+
+# Make me a client on the wireless ad-hoc network being served by Raspberry-Pi-1
+iwconfig wlan0 mode Ad-Hoc
+iwconfig wlan0 essid Raspberry-Pi-1
+
+# Print the IP address
+_IP=$(hostanem -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+
+exit 0

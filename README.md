@@ -34,7 +34,7 @@ You will need to install some packages on the Raspberry Pi, as follows:
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install git python3-pip
-sudo apt-get install vim byobu # optional, but makes your life easier
+sudo apt-get install vim byobu wicd-curses # optional, but makes your life easier
 ```
 
 You will need to use the `raspi-config` tool to change the password of the pi user,
@@ -94,6 +94,48 @@ sudo systemctl start mqtt_imaging
 systemctl status mqtt_imaging
 journalctl -u mqtt_imaging
 sudo systemctl stop mqtt_imaging
+```
+
+## Ad Hoc Wi-Fi Network Setup
+
+To acquire images from multiple Raspberry Pi cameras, each camera should be
+connected to a Raspberry Pi board. A Raspberry Pi 3 B+ should be running the
+`mqtt_broker` service, and it can also run the `mqtt_imaging` service for the
+camera attached to it. The other Raspberry Pi boards (e.g. Raspberry Pi Zero W)
+should be running the `mqtt_imaging` service for their respective cameras. Then
+the Raspberry Pi 3 needs to be configured to host a simple ad hoc wi-fi network.
+
+### Enabling the Ad Hoc Network
+NOTE: This currently doesn't work correctly. Instead of setting up an ad hoc
+network, the Raspberry Pi boards all need to be connected to some wireless
+access point.
+
+The details of enabling and disabling the ad hoc network are managed by the
+[simondlevy/RPiAdHocWiFi repo](https://github.com/simondlevy/RPiAdHocWiFi):
+```
+cd ~/Desktop
+git clone https://github.com/simondlevy/RPiAdHocWiFi.git
+```
+
+To enable the ad hoc network, run the following and reboot the Raspberry Pi:
+```
+cd ~/Desktop/RPiAdHocWiFi
+sudo ./install.sh
+```
+This will create an ad hoc network with SSID `Raspberry-Pi-1`, and the Raspberry Pi
+will be accessible at IP address `192.168.2.2`.
+
+### Connecting to the Ad Hoc Network
+To configure the other Raspberry Pi boards, copy `deploy/adhoc/rc.local` to
+`/etc/rc.local`:
+```
+cd ~/Desktop/picamera-mqtt
+sudo cp deploy/adhoc/rc.local /etc/rc.local
+```
+and copy `deploy/adhoc/wpa_supplicant.conf` to `/etc/wpa_supplicant/wpa_supplicant.conf`:
+```
+cd ~/Desktop/picamera-mqtt
+sudo cp deploy/adhoc/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf
 ```
 
 ## System Tests

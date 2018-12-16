@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
 
 setuptools.setup(
     name='picamera-mqtt',
-    version='0.0.3',
+    version='0.0.4',
     author='Ethan Li',
     author_email='lietk12@gmail.com',
     description=(

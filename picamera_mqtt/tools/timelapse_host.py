@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Program parameters
 final_image_receive_timeout = 5
+param_receive_poll_interval = 1
 
 
 class TimelapseHost(Host):
@@ -35,9 +36,26 @@ class TimelapseHost(Host):
         super().__init__(*args, **kwargs)
         self.acquisition_interval = acquisition_interval
         self.acquisition_length = acquisition_length
+        self.params_received = {
+            target_name: False for target_name in self.target_names
+        }
+
+    def on_params_topic(self, client, userdata, msg):
+        target_name = msg.topic.split('/')[0]
+        self.params_received[target_name] = True
+        super().on_params_topic(client, userdata, msg)
+
+    def on_run(self):
+        """When the client starts the run loop, handle it."""
+        for target_name in self.target_names:
+            self.set_params_from_stored(target_name)
 
     async def run_iteration(self):
         """Run one iteration of the run loop."""
+        if not any(self.params_received.values()):
+            await asyncio.sleep(param_receive_poll_interval)
+            return
+
         requested_image = False
         for target_name in self.target_names:
             if self.image_ids[target_name] <= self.acquisition_length:
@@ -92,6 +110,7 @@ if __name__ == '__main__':
         topics=topics, capture_dir=capture_dir,
         acquisition_interval=acquisition_interval,
         acquisition_length=acquisition_length,
+        camera_params=configuration['targets']
     )
     run_function(mqttc.run)
     logger.info('Finished!')

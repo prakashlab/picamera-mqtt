@@ -21,5 +21,34 @@
     "ping_timeout": 1,
     "client_name": "host",
     "target_names": ["camera_1"]
+  },
+  "targets": {
+    "camera_1": {
+      "roi_zoom": 1.0,
+      "shutter_speed": 200.0,
+      "iso": 60,
+      "resolution_width": 1640,
+      "resolution_height": 1232,
+      "awb_gain_red": 2.0,
+      "awb_gain_blue": 1.0
+    },
+    "camera_2": {
+      "roi_zoom": 1.0,
+      "shutter_speed": 20.0,
+      "iso": 60,
+      "resolution_width": 1640,
+      "resolution_height": 1232,
+      "awb_gain_red": 2.0,
+      "awb_gain_blue": 1.0
+    },
+    "camera_3": {
+      "roi_zoom": 1.0,
+      "shutter_speed": 20.0,
+      "iso": 60,
+      "resolution_width": 1640,
+      "resolution_height": 1232,
+      "awb_gain_red": 2.0,
+      "awb_gain_blue": 1.0
+    }
   }
-} 
+}

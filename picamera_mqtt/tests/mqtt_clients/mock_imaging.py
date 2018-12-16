@@ -29,6 +29,8 @@ class MockImager(Imager):
     def init_imaging(self):
         """Initialize imaging support."""
         self.camera = imaging.MockCamera()
+        if self.client_name in self.camera_params:
+            self.camera.set_params(**self.camera_params[self.client_name])
 
     def on_deployment_topic(self, client, userdata, msg):
         """Handle any device deployment messages."""
@@ -68,7 +70,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     mqttc = MockImager(
         loop, **configuration['broker'], **configuration['deploy'],
-        topics=topics
+        topics=topics, camera_params=configuration['targets']
     )
     run_function(mqttc.run)
     logger.info('Finished!')

@@ -56,8 +56,9 @@ topics = {
 class Host(AsyncioClient):
     """Sends imaging control messages to broker and saves received images."""
 
-    def __init__(self, *args, capture_dir='', **kwargs):
+    def __init__(self, *args, capture_dir='', camera_params={}, **kwargs):
         super().__init__(*args, **kwargs)
+        self.camera_params = camera_params
         self.image_ids = {target_name: 1 for target_name in self.target_names}
         self.capture_dir = capture_dir
 
@@ -69,7 +70,12 @@ class Host(AsyncioClient):
             self.client.message_callback_add(topic_path, self.on_imaging_topic)
 
     def on_params_topic(self, client, userdata, msg):
-        pass
+        payload = msg.payload.decode(message_string_encoding)
+        target_name = msg.topic.split('/')[0]
+        logger.info(
+            'Received camera params response from target {}: {}'
+            .format(target_name, payload)
+        )
 
     def on_imaging_topic(self, client, userdata, msg):
         payload = msg.payload.decode(message_string_encoding)
@@ -170,10 +176,16 @@ class Host(AsyncioClient):
         for (key, value) in params.items():
             if value is not None:
                 update_obj[key] = value
+        logger.info('Setting {} camera parameters to: {}'.format(
+            target_name, update_obj
+        ))
         update_message = json.dumps(update_obj)
         return self.publish_message(
             control_topic, update_message, local_namespace=target_name
         )
+
+    def set_params_from_stored(self, target_name):
+        return self.set_params(target_name, **self.camera_params[target_name])
 
     def set_roi(self, target_name, zoom=None):
         self.set_params(target_name, roi_zoom=zoom)

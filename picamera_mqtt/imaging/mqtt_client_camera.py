@@ -56,10 +56,11 @@ topics = {
 class Imager(AsyncioClient):
     """Acquires images based on messages from the broker."""
 
-    def __init__(self, *args, pi_username='pi', **kwargs):
+    def __init__(self, *args, pi_username='pi', camera_params={}, **kwargs):
         """Initialize client state."""
         super().__init__(*args, **kwargs)
 
+        self.camera_params = camera_params
         self.init_imaging()
         self.control_handlers = {
             'acquire_image': self.acquire_image,
@@ -80,6 +81,8 @@ class Imager(AsyncioClient):
                 framerate=framerate
             ), **kwargs
         )
+        if self.client_name in self.camera_params:
+            self.camera.set_params(**self.camera_params[self.client_name])
 
     def on_disconnect(self, client, userdata, rc):
         """When the client disconnects, handle it."""
@@ -201,7 +204,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     mqttc = Imager(
         loop, **configuration['broker'], **configuration['deploy'],
-        topics=topics
+        topics=topics, camera_params=configuration['targets']
     )
     run_function(mqttc.run)
     logger.info('Finished!')

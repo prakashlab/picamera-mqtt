@@ -217,6 +217,7 @@ class MockCamera(BaseCamera):
         return {
             'sensor_mode': 'mock white noise',
             'zoom': self.zoom,
+            'shutter_speed': self.shutter_speed,
             'iso': self.iso,
             'resolution': {
                 'width': self.resolution[0],

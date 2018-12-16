@@ -17,6 +17,8 @@
     "target_names": ["camera_1"]
   },
   "host": {
+    "ping_interval": 2,
+    "ping_timeout": 1,
     "client_name": "host",
     "target_names": ["camera_1"]
   }

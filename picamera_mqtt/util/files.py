@@ -1,6 +1,14 @@
 """Support for reading and writing files."""
 import base64
 import json
+import pathlib
+
+# Directory I/O
+
+def ensure_path(path):
+    """Ensure the existence of the path by making directories as needed."""
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
 
 # JSON I/O
 

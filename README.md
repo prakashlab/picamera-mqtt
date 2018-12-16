@@ -7,12 +7,28 @@ Deployment scripts needs to be run from a Raspberry Pi. Other scripts can be run
 To run the MQTT broker server, edit `deploy/config/broker.conf` and then run
 `deploy/mqtt_broker.sh`.
 
+### Broker Autostart
+To automatically run the MQTT broker when the host Raspberry Pi starts up,
+install the `mqtt_broker.service` systemd unit:
+```
+cd ~/Desktop/picamera-mqtt
+sudo cp deploy/systemd/mqtt_broker.service /etc/systemd/system/mqtt_broker.service
+sudo systemctl enable mqtt_broker
+```
+You can manually start the service with systemd, view the status of the service with systemd,
+view its output logs with journalctl, or kill the script with systemd:
+```
+sudo systemctl start mqtt_broker
+systemctl status mqtt_broker
+journalctl -u mqtt_broker
+sudo systemctl stop mqtt_broker
+```
+
 ## Camera Client Deployment Setup
 
 These instructions are for setting up a Raspberry Pi to deploy a camera imaging client.
 
 ### Preparation
-
 You will need to install some packages on the Raspberry Pi, as follows:
 ```
 sudo apt-get update
@@ -63,9 +79,9 @@ You will need to edit the `deploy/config/settings.json` config file such that:
   client. This id number will be used to uniquely label each camera stream.
 
 
-### Client Software Autostart
-To automatically run the prototype when the Raspberry Pi starts up, install the
-`mqtt_imaging.service` systemd unit:
+### Camera Client Software Autostart
+To automatically run the camera MQTT client when the Raspberry Pi starts up,
+install the `mqtt_imaging.service` systemd unit:
 ```
 cd ~/Desktop/picamera-mqtt
 sudo cp deploy/systemd/mqtt_imaging.service /etc/systemd/system/mqtt_imaging.service
@@ -79,6 +95,30 @@ systemctl status mqtt_imaging
 journalctl -u mqtt_imaging
 sudo systemctl stop mqtt_imaging
 ```
+
+## System Tests
+
+With an operational camera client connected to the MQTT broker server, you can run two
+tests on the computer running the MQTT broker server to confirm correct image
+transfer:
+```
+cd ~/Desktop/picamera-mqtt
+python3 -m picamera_mqtt.tests.mqtt_clients.mock_host --interval 8 --config settings_localhost.json
+```
+
+This will exercise roundtrip communication to and from the camera client with
+client name `camera_` by sending image acquisition messages to the camera client
+every 8 seconds and receiving (and discarding) images captured by the camera client.
+
+To save these images, run the following test:
+```
+cd ~/Desktop/picamera-mqtt
+python3 -m picamera_mqtt.tools.timelapse_host --interval 15 --number 5 --config settings.json
+```
+This will take a timelapse of 5 images spaced out at 15-second intervals from
+all camera clients connected to the broker with client names `camera_1`, `camera_2`,
+and `camera_3`.  By default, images will be saved to the `data` directory, but
+you can change this with the `--output_dir` flag to specify a different path.
 
 ## System Administration
 

@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import logging.config
+import os
 import time
 
 from picamera_mqtt.mqtt_clients import AsyncioClient, message_string_encoding
@@ -49,11 +50,12 @@ topics = {
 class Host(AsyncioClient):
     """Sends imaging control messages to broker and saves received images."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, capture_dir='', **kwargs):
         super().__init__(*args, **kwargs)
         self.image_ids = {
             target_name: 1 for target_name in self.target_names
         }
+        self.capture_dir = capture_dir
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
@@ -82,7 +84,7 @@ class Host(AsyncioClient):
         capture.pop('image', None)
         self.save_captured_metadata(capture)
         capture['camera_params'] = '...'
-        logger.info('Received image on topic {}: {}'.format(
+        logger.debug('Received image on topic {}: {}'.format(
             msg.topic, json.dumps(capture)
         ))
 
@@ -94,16 +96,24 @@ class Host(AsyncioClient):
         )
 
     def save_captured_image(self, capture):
+        files.ensure_path(self.capture_dir)
         capture_filename = self.build_capture_filename(capture)
         image_filename = '{}.{}'.format(capture_filename, capture['format'])
         image_base64 = capture['image']
-        files.b64_string_bytes_save(image_base64, image_filename)
+        image_path = os.path.join(self.capture_dir, image_filename)
+        files.b64_string_bytes_save(image_base64, image_path)
+        logger.info('Saved image to: {}'.format(image_path))
 
     def save_captured_metadata(self, capture):
+        files.ensure_path(self.capture_dir)
         capture_filename = self.build_capture_filename(capture)
         image_filename = '{}.{}'.format(capture_filename, capture['format'])
         capture['image'] = image_filename
-        files.json_dump(capture, '{}.json'.format(capture_filename))
+        metadata_path = os.path.join(
+            self.capture_dir, '{}.json'.format(capture_filename)
+        )
+        files.json_dump(capture, metadata_path)
+        logger.info('Saved metadata to: {}'.format(metadata_path))
 
     def request_image(
         self, target_name, format='jpeg',

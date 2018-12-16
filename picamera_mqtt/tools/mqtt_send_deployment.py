@@ -63,25 +63,21 @@ class Publisher(AsyncioClient):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Send a deployment message.')
     parser.add_argument('message', type=str, help='Message to send on the deployment topic.')
-    parser.add_argument(
-        '--config', '-c', type=str, default=client_config_sample_localhost_name,
-        help=(
-            'Name of client settings file in {}. Default: {}'
-            .format(client_configs_sample_path, client_config_sample_localhost_name)
-        )
+    config.add_config_arguments(
+        parser,
+        client_configs_sample_path, client_config_sample_localhost_name
     )
     parser.add_argument(
         '--target_name', '-t', type=str, default='camera_1',
         help=('Name of camera client to send a message to. Default: camera_1')
     )
     args = parser.parse_args()
-    config_name = args.config
     message = args.message
+    configuration = config.load_config_from_args(args)
+
     register_keyboard_interrupt_signals()
 
-    # Load configuration
-    config_path = os.path.join(client_configs_sample_path, config_name)
-    configuration = config.config_load(config_path)
+    # Override configuration
     configuration['host']['client_name'] = 'mqtt_send_deployment'
     configuration['host']['target_names'] = [args.target_name]
 

@@ -3,12 +3,12 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-ExecStart=/home/pi/Desktop/picamera-mqtt/deploy/start_mqtt_imaging.sh
+ExecStart=/home/pi/Desktop/picamera-mqtt/deploy/start_mqtt_broker.sh
 KillSignal=SIGINT
 TimeoutStopSec=5
 Restart=always
 Type=forking
-PIDFile=/var/run/mqtt_imaging.pid
+PIDFile=/var/run/mqtt_broker.pid
 
 [Install]
 WantedBy=default.target

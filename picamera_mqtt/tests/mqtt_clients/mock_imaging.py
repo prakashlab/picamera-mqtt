@@ -52,22 +52,17 @@ class MockImager(Imager):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate random images on request.')
-    parser.add_argument(
-        '--config', '-c', type=str, default=client_config_sample_localhost_name,
-        help=(
-            'Name of client settings file in {}. Default: {}'
-            .format(client_configs_sample_path, client_config_sample_localhost_name)
-        )
+    parser = argparse.ArgumentParser(
+        description='Generate random images on request.'
+    )
+    config.add_config_arguments(
+        parser,
+        client_configs_sample_path, client_config_sample_localhost_name
     )
     args = parser.parse_args()
-    config_name = args.config
+    configuration = config.load_config_from_args(args)
 
     register_keyboard_interrupt_signals()
-
-    # Load configuration
-    config_path = os.path.join(client_configs_sample_path, config_name)
-    configuration = config.config_load(config_path)
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()

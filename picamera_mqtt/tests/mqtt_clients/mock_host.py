@@ -30,7 +30,7 @@ class MockHost(Host):
         self.acquisition_interval = acquisition_interval
 
     def save_captured_image(self, capture):
-        logger.info('Mock saving acquired image {}.'.format(
+        logger.info('Mock discarding acquired image: {}'.format(
             self.build_capture_filename(capture)
         ))
 
@@ -48,32 +48,27 @@ class MockHost(Host):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Send image acquisition messages and save acquired images.'
+        description='Acquire and discard images.'
     )
-    parser.add_argument(
-        '--config', '-c', type=str,
-        default=client_config_sample_localhost_name,
-        help=('Name of client settings file in {}. Default: {}'.format(
-            client_configs_sample_path, client_config_sample_localhost_name
-        ))
+    config.add_config_arguments(
+        parser,
+        client_configs_sample_path, client_config_sample_localhost_name
     )
     parser.add_argument(
         '--interval', '-i', type=int, default=8,
         help='Image acquisition interval in seconds. Default: 8'
     )
     args = parser.parse_args()
-    config_name = args.config
-    register_keyboard_interrupt_signals()
+    acquisition_interval = args.interval
+    configuration = config.load_config_from_args(args)
 
-    # Load configuration
-    config_path = os.path.join(client_configs_sample_path, config_name)
-    configuration = config.config_load(config_path)
+    register_keyboard_interrupt_signals()
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()
     mqttc = MockHost(
         loop, **configuration['broker'], **configuration['host'],
-        topics=topics, acquisition_interval=args.interval
+        topics=topics, acquisition_interval=acquisition_interval
     )
     run_function(mqttc.run)
     logger.info('Finished!')

@@ -1,5 +1,6 @@
 """Test script to control imaging from a MQTT topic."""
 
+import argparse
 import asyncio
 import datetime
 import json
@@ -174,11 +175,16 @@ class Imager(AsyncioClient):
 
 
 if __name__ == '__main__':
-    register_keyboard_interrupt_signals()
+    parser = argparse.ArgumentParser(
+        description='Acquire images from a Raspberry Pi camera on request.'
+    )
+    config.add_config_arguments(
+        deploy.client_configs_path, deploy.client_config_plain_name
+    )
+    args = parser.parse_args()
+    configuration = config.load_config_from_args(args)
 
-    # Load configuration
-    config_path = deploy.client_config_plain_path
-    configuration = config.config_load(config_path)
+    register_keyboard_interrupt_signals()
 
     logger.info('Starting client...')
     loop = asyncio.get_event_loop()

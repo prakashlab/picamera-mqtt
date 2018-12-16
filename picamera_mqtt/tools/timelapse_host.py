@@ -7,7 +7,7 @@ import logging.config
 
 from picamera_mqtt import data_path
 from picamera_mqtt.deploy import (
-    client_config_sample_localhost_name, client_configs_sample_path
+    client_config_plain_name, client_configs_path
 )
 from picamera_mqtt.imaging.mqtt_client_host import Host, topics
 from picamera_mqtt.util import config
@@ -60,8 +60,7 @@ if __name__ == '__main__':
         description='Acquire timelapse series.'
     )
     config.add_config_arguments(
-        parser,
-        client_configs_sample_path, client_config_sample_localhost_name
+        parser, client_configs_path, client_config_plain_name
     )
     parser.add_argument(
         '--interval', '-i', type=int, default=15,

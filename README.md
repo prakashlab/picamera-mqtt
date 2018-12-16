@@ -98,8 +98,8 @@ sudo systemctl stop mqtt_imaging
 
 ## System Tests
 
-With an operational camera client connected to the MQTT broker server, you can run two
-tests on the computer running the MQTT broker server to confirm correct image
+With an operational camera client connected to the MQTT broker server, you can run
+a few tests on the computer running the MQTT broker server to confirm correct image
 transfer:
 ```
 cd ~/Desktop/picamera-mqtt
@@ -107,18 +107,29 @@ python3 -m picamera_mqtt.tests.mqtt_clients.mock_host --interval 8 --config sett
 ```
 
 This will exercise roundtrip communication to and from the camera client with
-client name `camera_` by sending image acquisition messages to the camera client
+client name `camera_1` by sending image acquisition messages to the camera client
 every 8 seconds and receiving (and discarding) images captured by the camera client.
 
 To save these images, run the following test:
 ```
 cd ~/Desktop/picamera-mqtt
-python3 -m picamera_mqtt.tools.timelapse_host --interval 15 --number 5 --config settings.json
+python3 -m picamera_mqtt.tools.timelapse_host --interval 15 --number 5
 ```
 This will take a timelapse of 5 images spaced out at 15-second intervals from
 all camera clients connected to the broker with client names `camera_1`, `camera_2`,
-and `camera_3`.  By default, images will be saved to the `data` directory, but
-you can change this with the `--output_dir` flag to specify a different path.
+and `camera_3`; the client names queried can be changed by editing the config file.
+By default, images will be saved to the `data` directory, but you can change this
+with the `--output_dir` flag to specify a different path.
+
+If you only want to capture image snapshots at a single time point, run the following test:
+```
+cd ~/Desktop/picamera-mqtt
+python3 -m picamera_mqtt.tools.acquire_host
+```
+By default, images will be saved to the `data` directory, but you can change this
+with the `--output_dir` flag to specify a different path. By default, images will
+be saved with filenames with `acquire` at the start, but you can change this with
+the `--output_prefix` flag to specify a different filename prefix.
 
 ## System Administration
 

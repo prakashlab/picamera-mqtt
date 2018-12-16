@@ -9,7 +9,7 @@ import time
 
 from picamera_mqtt.mqtt_clients import AsyncioClient, message_string_encoding
 from picamera_mqtt.protocol import (
-    connect_topic, control_topic, deployment_topic, imaging_topic
+    connect_topic, control_topic, deployment_topic, imaging_topic, params_topic
 )
 from picamera_mqtt.util import files
 
@@ -32,6 +32,12 @@ topics = {
         'subscribe': True,
         'log': False
     },
+    params_topic: {
+        'qos': 2,
+        'local_namespace': True,
+        'subscribe': True,
+        'log': True
+    },
     deployment_topic: {
         'qos': 2,
         'local_namespace': True,
@@ -52,15 +58,18 @@ class Host(AsyncioClient):
 
     def __init__(self, *args, capture_dir='', **kwargs):
         super().__init__(*args, **kwargs)
-        self.image_ids = {
-            target_name: 1 for target_name in self.target_names
-        }
+        self.image_ids = {target_name: 1 for target_name in self.target_names}
         self.capture_dir = capture_dir
 
     def add_topic_handlers(self):
         """Add any topic handler message callbacks as needed."""
+        for topic_path in self.get_topic_paths(params_topic):
+            self.client.message_callback_add(topic_path, self.on_params_topic)
         for topic_path in self.get_topic_paths(imaging_topic):
             self.client.message_callback_add(topic_path, self.on_imaging_topic)
+
+    def on_params_topic(self, client, userdata, msg):
+        pass
 
     def on_imaging_topic(self, client, userdata, msg):
         payload = msg.payload.decode(message_string_encoding)
@@ -155,3 +164,29 @@ class Host(AsyncioClient):
         self.publish_message(
             control_topic, acquisition_message, local_namespace=target_name
         )
+
+    def set_params(self, target_name, **params):
+        update_message = {'action': 'set_params'}
+        for (key, value) in params.items():
+            if value is not None:
+                update_message[key] = value
+        self.publish_message(
+            control_topic, update_message, local_namespace=target_name
+        )
+
+    def set_roi(self, target_name, zoom=None):
+        self.set_params(target_name, roi_zoom=zoom)
+
+    def set_shutter_speed(self, target_name, shutter_speed=None):
+        self.set_params(target_name, shutter_speed=shutter_speed)
+
+    def set_iso(self, target_name, iso=None):
+        self.set_params(target_name, iso=iso)
+
+    def set_resolution(self, target_name, width=None, height=None):
+        self.set_params(
+            target_name, resolution_width=width, resolution_height=height
+        )
+
+    def set_awb_gains(self, target_name, red=None, blue=None):
+        self.set_params(target_name, awb_gain_red=red, awb_gain_blue=blue)

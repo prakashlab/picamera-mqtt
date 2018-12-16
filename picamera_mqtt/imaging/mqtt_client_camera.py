@@ -12,7 +12,7 @@ from picamera_mqtt import deploy
 from picamera_mqtt.imaging import imaging
 from picamera_mqtt.mqtt_clients import AsyncioClient, message_string_encoding
 from picamera_mqtt.protocol import (
-    control_topic, deployment_topic, imaging_topic
+    control_topic, deployment_topic, imaging_topic, params_topic
 )
 from picamera_mqtt.util import config
 from picamera_mqtt.util.async import (
@@ -38,6 +38,12 @@ topics = {
         'subscribe': False,
         'log': False
     },
+    params_topic: {
+        'qos': 2,
+        'local_namespace': True,
+        'subscribe': False,
+        'log': False
+    },
     deployment_topic: {
         'qos': 2,
         'local_namespace': True,
@@ -57,7 +63,7 @@ class Imager(AsyncioClient):
         self.init_imaging()
         self.control_handlers = {
             'acquire_image': self.acquire_image,
-            'update_parameters': self.update_parameters
+            'set_params': self.set_params
         }
 
         self.pi_username = pi_username
@@ -159,9 +165,11 @@ class Imager(AsyncioClient):
             logger.info('Publishing image to {}...'.format(topic_path))
         self.publish_message(imaging_topic, output_json)
 
-    def update_parameters(self, params):
+    def set_params(self, params):
         """Update camera parameters."""
-        pass
+        params.pop('action')
+        self.camera.set_params(**params)
+        self.publish_message(params_topic, self.camera.get_params())
 
     def run_control_command(self, control_command):
         """Apply an imaging control command."""

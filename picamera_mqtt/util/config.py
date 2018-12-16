@@ -9,15 +9,18 @@ from picamera_mqtt.util import files
 logger = logging.getLogger(__name__)
 
 
+# Config load/save
+
 def config_dump(config_obj, config_path):
     """Dump and encrypt a json config to a file."""
     files.json_dump(config_obj, config_path)
-
 
 def config_load(config_path):
     """Load a json config from a file."""
     return files.json_load(config_path)
 
+
+# Command-line args
 
 def add_config_arguments(arg_parser, default_config_path, default_config_name):
     arg_parser.add_argument(
@@ -33,7 +36,6 @@ def add_config_arguments(arg_parser, default_config_path, default_config_name):
             default_config_name
         ))
     )
-
 
 def load_config_from_args(parsed_args):
     config_dir = parsed_args.config_dir

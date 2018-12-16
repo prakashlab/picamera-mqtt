@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Capture an image."""
+import argparse
 import json
 
 from picamera_mqtt.imaging import imaging
 from picamera_mqtt.util import files
 
 
-def main():
+def main(camera_params):
     camera = imaging.MockCamera()
+    camera.set_params(**camera_params)
     print('Capturing image...')
     image_pil = camera.capture_pil(quality=100)
     print('Captured image!')
@@ -30,8 +32,16 @@ def main():
         image_base64_string, 'capture_mock_final.jpg'
     )
     print('Saved capture_mock_final.jpg!')
+    print(camera.get_params())
 
 
 # Main program logic follows:
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+        description='Capture a mock image of random noise.'
+    )
+    imaging.add_camera_params_arguments(parser)
+    args = parser.parse_args()
+    camera_params = imaging.parse_camera_params_from_args(args)
+
+    main(camera_params)

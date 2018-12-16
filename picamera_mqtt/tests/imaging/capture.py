@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Capture an image."""
+import argparse
 import json
 
 from picamera import PiCamera
@@ -8,9 +9,10 @@ from picamera_mqtt.imaging import imaging
 from picamera_mqtt.util import files
 
 
-def main():
+def main(camera_params):
     pi_camera = PiCamera(resolution=(1640, 1232), sensor_mode=4, framerate=15)
     camera = imaging.Camera(pi_camera)
+    camera.set_params(**camera_params)
     print('Capturing image...')
     image_pil = camera.capture_pil(quality=100)
     print('Captured image!')
@@ -37,4 +39,11 @@ def main():
 
 # Main program logic follows:
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+        description='Capture an image with the Raspberry Pi camera.'
+    )
+    imaging.add_camera_params_arguments(parser)
+    args = parser.parse_args()
+    camera_params = imaging.parse_camera_params_from_args(args)
+
+    main(camera_params)

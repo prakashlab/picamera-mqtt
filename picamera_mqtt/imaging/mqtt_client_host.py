@@ -161,16 +161,17 @@ class Host(AsyncioClient):
                 )[0], acquisition_message
             )
         )
-        self.publish_message(
+        return self.publish_message(
             control_topic, acquisition_message, local_namespace=target_name
         )
 
     def set_params(self, target_name, **params):
-        update_message = {'action': 'set_params'}
+        update_obj = {'action': 'set_params'}
         for (key, value) in params.items():
             if value is not None:
-                update_message[key] = value
-        self.publish_message(
+                update_obj[key] = value
+        update_message = json.dumps(update_obj)
+        return self.publish_message(
             control_topic, update_message, local_namespace=target_name
         )
 

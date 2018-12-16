@@ -169,7 +169,9 @@ class Imager(AsyncioClient):
         """Update camera parameters."""
         params.pop('action')
         self.camera.set_params(**params)
-        self.publish_message(params_topic, self.camera.get_params())
+        params_obj = self.camera.get_params()
+        params_message = json.dumps(params_obj)
+        self.publish_message(params_topic, params_message)
 
     def run_control_command(self, control_command):
         """Apply an imaging control command."""
@@ -187,6 +189,7 @@ if __name__ == '__main__':
         description='Acquire images from a Raspberry Pi camera on request.'
     )
     config.add_config_arguments(
+        parser,
         deploy.client_configs_path, deploy.client_config_plain_name
     )
     args = parser.parse_args()

@@ -35,6 +35,7 @@ def main(camera_params):
         image_base64_string, 'capture_final.jpg'
     )
     print('Saved capture_final.jpg!')
+    print(camera.get_params())
 
 
 # Main program logic follows:

@@ -145,3 +145,21 @@ python3 -m intervention_system.tools.mqtt_send_deployment stop --target_name cam
 python3 -m intervention_system.tools.mqtt_send_deployment restart --target_name camera_1 # restart the illumination client running camera 1
 python3 -m intervention_system.tools.mqtt_send_deployment "git pull" --target_name camera_1 # update the repo and restart the illumination client running camera 1
 ```
+
+## Camera Parameter Adjustment
+
+You can remotely send camera parameter update commands to the Raspberry Pi client
+by sending messages over the `control` topic. The
+`picamera_mqtt/tools/deploy/mqtt_send_camera_params` script lets you do this
+from the command-line, as follows:
+```
+cd ~/hand-hygiene/intervention
+python3 -m intervention_system.tools.mqtt_send_camera_params --target_name camera_1 # query camera parameters from camera 1
+python3 -m intervention_system.tools.mqtt_send_camera_params --target_name camera_1 --roi_zoom 1.5 # set camera zoom factor to 1.5 on camera 1
+python3 -m intervention_system.tools.mqtt_send_camera_params --target_name camera_1 --shutter_speed 200 # set shutter speed to 200 ms on camera 1
+python3 -m intervention_system.tools.mqtt_send_camera_params --target_name camera_1 --iso 200 # set ISO to 200 on camera 1
+python3 -m intervention_system.tools.mqtt_send_camera_params --target_name camera_1 --resolution_width 1920 --resolution_height 1080 # set the image resolution to 1920x1080 on camera 1
+python3 -m intervention_system.tools.mqtt_send_camera_params --target_name camera_1 --awb_gain_red 2.0 # set AWB red gain to 2.0 on camera 1
+python3 -m intervention_system.tools.mqtt_send_camera_params --target_name camera_1 --awb_gain_blue 2.0 # set AWB blue gain to 2.0 on camera 1
+```
+Note that all camera param flags can be combined into a single command if you wish.
